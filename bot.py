@@ -9,7 +9,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 OSAKE_SYMBOLI = "NOKIA.HE"  # Esim. Nokia (Helsingin pörssi) tai "AAPL" (Apple)
-MUUTOS_KYNNYS = -2.0        # Varoitus, jos laskee yli 2%
+MUUTOS_KYNNYS = 100.0        # Varoitus, jos laskee yli 2%
 
 def laheta_telegram(viesti):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
