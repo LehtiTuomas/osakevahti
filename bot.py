@@ -9,19 +9,23 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# 2. Seurantalista: Indeksit & Keskeiset osakkeet, joille löytyy Nordnet Mini Long / Futuuri -tuotteita
+# 2. Seurantalista: Varmistetut Yahoo Finance -symbolit (Nordnetin suositut kohteet & indeksit)
 SEURANTALISTA = [
-    # Indeksit (Nordnet Mini Long DAX, Nasdaq, S&P 500, OMXH25)
+    # Indeksit
     "^GDAXI",   # DAX 40 (Saksa)
     "^NDX",     # Nasdaq 100 (USA Tekno)
     "^GSPC",    # S&P 500 (USA)
     "^OMXH25",  # OMX Helsinki 25
 
-    # Suomi (Nordnet Mini Long -suosikit)
-    "NOKIA.HE", "NESTE.HE", "UPM.HE", "FORTUM.HE", "KONE.HE", 
-    "SAMPO.HE", "NDA-FI.HE", "WRT1V.HE", "VALMT.HE", "METSA.HE",
+    # Suomi (Varmistetut tikkerit)
+    "NOKIA.HE", "NESTE.HE", "UPM.HE", "FORTUM.HE", 
+    "KNEBV.HE", # Kone Oyj B
+    "SAMPO.HE", 
+    "NDA-FI.HE",# Nordea
+    "WRT1V.HE", # Wärtsilä
+    "VALMT.HE", # Valmet
 
-    # USA (Nordnet Mini Long -suosikit)
+    # USA (Teknot & Suuret)
     "NVDA", "TSLA", "AAPL", "MSFT", "AMZN", "GOOGL", "AMD", "META"
 ]
 
@@ -75,13 +79,14 @@ def main():
     for symboli in SEURANTALISTA:
         try:
             osake = yf.Ticker(symboli)
-            # Haetaan 1 vuosi historiaa, jotta 200 päivän keskiarvo (SMA200) voidaan laskea
+            # Haetaan 1 vuosi historiaa SMA200 varten
             hist = osake.history(period="1y")
             
-            if len(hist) < 200:
-                # Jos dataa liian vähän SMA200-laskentaan, otetaan pienempi historia
-                hist = osake.history(period="1mo")
+            if len(hist) < 50:
+                # Jos dataa on vähemmän, yritetään lyhyempää jaksoa
+                hist = osake.history(period="3mo")
                 if len(hist) < 2:
+                    print(f"Varoitus: Ei tarpeeksi dataa kohteelle {symboli}")
                     continue
 
             # Lasketaan tekniset indikaattorit
@@ -93,13 +98,12 @@ def main():
             muutos_prosentti = ((viimeisin_hinta - edellinen_sulkeminen) / edellinen_sulkeminen) * 100
             
             rsi_arvo = hist['RSI'].iloc[-1] if not pd.isna(hist['RSI'].iloc[-1]) else 50.0
+            # Jos SMA200 puuttuu (uudempi listaus), käytetään nykyhintaa turvana
             sma200_arvo = hist['SMA200'].iloc[-1] if not pd.isna(hist['SMA200'].iloc[-1]) else viimeisin_hinta
 
             print(f"Tarkistettu: {symboli:10s} | Hinta: {viimeisin_hinta:8.2f} | Muutos: {muutos_prosentti:6.2f}% | RSI: {rsi_arvo:5.1f} | SMA200: {sma200_arvo:8.2f}")
 
             # 🎯 OSTOSTRATEGIAN EHDOT:
-            # Ehto 1: Voimakas päivälasku (<-2%) JA kohde on RSI:n mukaan ylimyyty (<35)
-            # Ehto 2: Hinta tippunut 200 päivän keskiarvon alle tai lähelle sitä
             osuma = False
             syy = ""
 
@@ -117,7 +121,7 @@ def main():
         except Exception as e:
             print(f"Virhe käsiteltäessä kohdetta {symboli}: {e}")
 
-    print("Kaikki kohteet tarkistettu.")
+    print("Kaikki kohteet tarkistettu onnistuneesti.")
 
 if __name__ == "__main__":
     main()
