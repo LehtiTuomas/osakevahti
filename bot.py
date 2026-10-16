@@ -9,7 +9,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 OSAKE_SYMBOLI = "NOKIA.HE"  # Esim. Nokia (Helsingin pörssi) tai "AAPL" (Apple)
-MUUTOS_KYNNYS = 100.0        # Varoitus, jos laskee yli 2%
+MUUTOS_KYNNYS = -2.0        # Varoitus, jos laskee yli 2%
 
 def laheta_telegram(viesti):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -17,26 +17,28 @@ def laheta_telegram(viesti):
     requests.post(url, json=payload)
 
 def main():
+    # Haetaan 5 päivän historia, jotta saadaan varmasti riittävästi rivejä vertailuun
     osake = yf.Ticker(OSAKE_SYMBOLI)
-    hist = osake.history(period="2d")
+    hist = osake.history(period="5d")
     
     if len(hist) < 2:
         print("Dataa ei saatu riittävästi.")
         return
 
-    eilen_sulkeminen = hist['Close'].iloc[-2]
-    tanaan_hinta = hist['Close'].iloc[-1]
-    muutos_prosentti = ((tanaan_hinta - eilen_sulkeminen) / eilen_sulkeminen) * 100
+    # Otetaan aina kaksi viimeisintä saatavilla olevaa kaupankäyntipäivää
+    edellinen_paiva = hist['Close'].iloc[-2]
+    viimeisin_hinta = hist['Close'].iloc[-1]
+    muutos_prosentti = ((viimeisin_hinta - edellinen_paiva) / edellinen_paiva) * 100
 
-    print(f"{OSAKE_SYMBOLI} hinta: {tanaan_hinta:.2f} € (Muutos: {muutos_prosentti:.2f}%)")
+    print(f"{OSAKE_SYMBOLI} hinta: {viimeisin_hinta:.2f} € (Muutos: {muutos_prosentti:.2f}%)")
 
     if muutos_prosentti <= MUUTOS_KYNNYS:
         # Käytetään Groqia (Llama 3 8B -mallia)
         client = Groq(api_key=GROQ_API_KEY)
         
         prompt = (
-            f"Osakkeen {OSAKE_SYMBOLI} hinta on laskenut tänään {muutos_prosentti:.2f}%. "
-            f"Nykytaso on {tanaan_hinta:.2f} €. Kirjoita todella tiivis (max 3 lausetta) "
+            f"Osakkeen {OSAKE_SYMBOLI} hinta on muuttunut {muutos_prosentti:.2f}%. "
+            f"Nykytaso on {viimeisin_hinta:.2f} €. Kirjoita todella tiivis (max 3 lausetta) "
             f"ja selkeä suomenkielinen varoitusviesti sijoittajalle Telegramiin."
         )
         
@@ -51,7 +53,7 @@ def main():
         laheta_telegram(viesti)
         print("Hälytys lähetetty Telegramiin!")
     else:
-        print("Ei aihetta hälytykseen.")
+        print("Ei aihetta hälytykseen. (Tarkistus tehty onnistuneesti)")
 
 if __name__ == "__main__":
     main()
