@@ -124,5 +124,14 @@
         "technical_note": "Päivälasku -2.00%, hinta 389.05 €, SMA200 477.17 €.",
         "catalyyti": "Tekninen dippi (RSI 45.6), päivämuutos -2.00%.",
         "processed": true
+    },
+    {
+        "id": "2026-10-19_METSA.HE",
+        "ticker": "METSA.HE",
+        "action_recommendation": "BUY",
+        "rsi": 31.0,
+        "technical_note": "Päivälasku -2.50%, hinta 3.90 €, SMA200 4.46 €.",
+        "catalyyti": "Tekninen dippi (RSI 31.0), päivämuutos -2.50%.",
+        "processed": true
     }
 ]
