@@ -8,7 +8,6 @@ on:
 jobs:
   run-trading-system:
     runs-on: ubuntu-latest
-    environment: SALAISUUDET
     permissions:
       contents: write # Antaa luvan tallentaa portfolio.json & signals.json
     steps:
