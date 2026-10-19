@@ -1,4 +1,4 @@
-name: Trading Bot System Workflow
+name: Trading Bot System Workflow V2
 
 on:
   schedule:
