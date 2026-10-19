@@ -9,8 +9,8 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Seurattavat osakkeet (voit lisätä listaan haluamasi tickerit)
-TICKERS = ["NOKIA.HE", "UPM.HE", "WAR1V.HE", "SIE.DE", "PLTR", "NVDA", "AAPL"]
+# Korjattu Wärtsilän ticker (WRT1V.HE)
+TICKERS = ["NOKIA.HE", "UPM.HE", "WRT1V.HE", "SIE.DE", "PLTR", "NVDA", "AAPL"]
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -33,6 +33,7 @@ def analyze_and_filter_stock(ticker_symbol):
     df = ticker.history(period="1y")
 
     if len(df) < 200:
+        print(f"[{ticker_symbol}] Liian vähän historiadataa.")
         return
 
     # Teknisten indikaattorien laskenta
@@ -46,8 +47,6 @@ def analyze_and_filter_stock(ticker_symbol):
     sma200 = df['SMA200'].iloc[-1]
 
     # --- TEKNINEN ESISUODATIN ---
-    # Otetaan jatkoon vain osakkeet, joissa on päiväkorjaus (-1.5% tai enemmän) 
-    # TAI matala RSI (< 42) TAI hinta lähellä SMA200-tukea
     is_dipping = day_change_pct <= -1.5
     is_rsi_low = current_rsi <= 42
     near_sma200 = abs(current_price - sma200) / sma200 <= 0.03
@@ -80,20 +79,19 @@ TÄRKEÄ TEHTÄVÄ:
 - Hakuvinkki Nordnetiin: [Anna täsmällinen hakusana Nordnetiin ja vinkki stop-loss -tasosta nykyisen hinnan alapuolella]
 """
 
+    # Vaihdettu malli sellaiseen, joka varmasti toimii Groqissa (esim. llama-3.1-8b-instant)
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2
     )
 
     ai_output = response.choices[0].message.content.strip()
 
-    # Jos AI hylkäsi tapauksen turhana, älä lähetä viestiä
     if "EIVAHVISTETA" in ai_output or len(ai_output) < 50:
         print(f"[{ticker_symbol}] AI hylkäsi ehtojen täyttymisen (turha lasku).")
         return
 
-    # Lähetetään AI:n muotoilema viesti Telegramiin
     send_telegram_message(ai_output)
     print(f"[{ticker_symbol}] Hälytys lähetetty Telegramiin!")
 
