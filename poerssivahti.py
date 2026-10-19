@@ -81,7 +81,7 @@ TÄRKEÄ TEHTÄVÄ:
 
     # Vaihdettu malli sellaiseen, joka varmasti toimii Groqissa (esim. llama-3.1-8b-instant)
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="llama3-70b-8192",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2
     )
