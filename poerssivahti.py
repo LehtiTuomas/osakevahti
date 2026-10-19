@@ -68,19 +68,19 @@ OSAKE: {ticker_symbol}
 - 200 päivän keskiarvo (SMA200): {sma200:.2f}
 
 TÄRKEÄ TEHTÄVÄ:
-1. Jos kyseessä on vain "putoava puukko" tai huono turha pudotus (tai osakkeessa ei ole aitoa rekyylimahdollisuutta), vastaa EIVAHVISTETA.
-2. Jos tämä ON strategiaan sopiva ostopaikka, vastaa TÄSMÄLLEEN seuraavalla muotoilulla (älä lisää mitään ylimääräistä johdantoa):
+1. Jos kyseessä on vain "putoava puukko" tai huono turha pudotus, vastaa EIVAHVISTETA.
+2. Jos tämä ON strategiaan sopiva ostopaikka, vastaa TÄSMÄLLEEN seuraavalla muotoilulla (älä lisää mitään muuta):
 
 🚨 DIPPI, KATALYYTTI & NORDNET-TUOTE: {ticker_symbol} 🚨
 - Tunnusluvut: Päivälasku {day_change_pct:.2f} %, RSI {current_rsi:.1f}, Hinta {current_price:.2f} €
-- Katalyytti-arvio: [Lyhyt 1-2 lauseen arvio siitä, miksi tämä dippi tarjoaa hyvän paikan ja onko kyseessä tekninen korjaus liitteenä markkinaan]
-- Nordnet Markets -tuotehässäkkä: [Suosittele sopivaa Nordnet Mini Long -tuotetta ja sopivaa viputasoa osakkeen riskiprofiilille]
-- Hakuvinkki Nordnetiin: [Anna täsmällinen hakusana Nordnetiin ja vinkki stop-loss -tasosta nykyisen hinnan alapuolella]
+- Katalyytti-arvio: [Lyhyt 1-2 lauseen arvio tilanteesta]
+- Nordnet Markets -tuotehässäkkä: [Suosittele sopivaa Nordnet Mini Long -tuotetta ja sopivaa viputasoa]
+- Hakuvinkki Nordnetiin: [Anna täsmällinen hakusana Nordnetiin]
 """
 
-  # Käytetään Groqin tuettua ja laajasti käytössä olevaa Llama 3.3 -mallia
+  # Käytetään varmasti toimivaa ja tuettua mallia
   response = client.chat.completions.create(
-      model="llama-3.3-70b-versatile",
+      model="deepseek-r1-distill-llama-70b",
       messages=[{"role": "user", "content": prompt}],
       temperature=0.2,
   )
@@ -105,5 +105,6 @@ def main():
 
 
 if __name__ == "__main__":
+  main()
   main()
   main()
