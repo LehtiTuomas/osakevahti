@@ -2,16 +2,19 @@ name: Trading Bot System Workflow
 
 on:
   schedule:
-    - cron: '0 16 * * 1-5'
+    - cron: '0 16 * * 1-5' # Arkisin klo 18.00 Suomen aikaa
   workflow_dispatch:
 
 jobs:
   run-trading-system:
     runs-on: ubuntu-latest
+    
+    # 🌟 TÄRKEÄ: Tämä kertoo GitHubille, että käytetään SALAISUUDET-ympäristöä
+    environment: SALAISUUDET
+    
     permissions:
       contents: write
     
-    # 🌟 GLOBAALIT YMPÄRISTÖMUUTTUJAT KOKO AJOLLE (kuten vanhassa botissa)
     env:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
