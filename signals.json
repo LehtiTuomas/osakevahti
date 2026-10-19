@@ -133,5 +133,14 @@
         "technical_note": "Päivälasku -2.50%, hinta 3.90 €, SMA200 4.46 €.",
         "catalyyti": "Tekninen dippi (RSI 31.0), päivämuutos -2.50%.",
         "processed": true
+    },
+    {
+        "id": "2026-10-19_WRT1V.HE",
+        "ticker": "WRT1V.HE",
+        "action_recommendation": "BUY",
+        "rsi": 52.8,
+        "technical_note": "Päivälasku -2.00%, hinta 28.91 €, SMA200 31.96 €.",
+        "catalyyti": "Tekninen dippi (RSI 52.8), päivämuutos -2.00%.",
+        "processed": true
     }
 ]
