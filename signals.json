@@ -142,5 +142,14 @@
         "technical_note": "Päivälasku -2.00%, hinta 28.91 €, SMA200 31.96 €.",
         "catalyyti": "Tekninen dippi (RSI 52.8), päivämuutos -2.00%.",
         "processed": true
+    },
+    {
+        "id": "2026-10-19_EQT.ST",
+        "ticker": "EQT.ST",
+        "action_recommendation": "BUY",
+        "rsi": 55.3,
+        "technical_note": "Päivälasku -2.08%, hinta 291.90 €, SMA200 305.04 €.",
+        "catalyyti": "Tekninen dippi (RSI 55.3), päivämuutos -2.08%.",
+        "processed": true
     }
 ]
