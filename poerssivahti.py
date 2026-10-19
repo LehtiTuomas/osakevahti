@@ -78,9 +78,9 @@ TÄRKEÄ TEHTÄVÄ:
 - Hakuvinkki Nordnetiin: [Anna täsmällinen hakusana Nordnetiin ja vinkki stop-loss -tasosta nykyisen hinnan alapuolella]
 """
 
-  # Käytetään Groqin tuettua vakaata mallia
+  # Käytetään Groqin tuettua ja laajasti käytössä olevaa Llama 3.3 -mallia
   response = client.chat.completions.create(
-      model="llama-3.1-8b-instant",
+      model="llama-3.3-70b-versatile",
       messages=[{"role": "user", "content": prompt}],
       temperature=0.2,
   )
@@ -105,4 +105,5 @@ def main():
 
 
 if __name__ == "__main__":
+  main()
   main()
