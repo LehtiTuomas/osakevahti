@@ -14,6 +14,11 @@ print("TELEGRAM_BOT_TOKEN pituus:", len(os.environ.get("TELEGRAM_BOT_TOKEN", "")
 print("TELEGRAM_CHAT_ID pituus:", len(os.environ.get("TELEGRAM_CHAT_ID", "")))
 print("---------------------------------")
 
+print("--- KAIKKI YMPÄRISTÖMUUTTUJIEN NIMET ---")
+for key in sorted(os.environ.keys()):
+  print(key)
+print("----------------------------------------")
+
 # API-avaimet & Tiedostot
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
