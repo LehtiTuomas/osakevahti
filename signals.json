@@ -1,1 +1,101 @@
-[]
+[
+    {
+        "id": "2026-10-19_^NDX",
+        "ticker": "^NDX",
+        "action_recommendation": "BUY",
+        "rsi": 33.5,
+        "technical_note": "Päivälasku -2.50%, hinta 29187.55 €, SMA200 27737.98 €.",
+        "catalyyti": "Tekninen dippi (RSI 33.5), päivämuutos -2.50%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_TSLA",
+        "ticker": "TSLA",
+        "action_recommendation": "BUY",
+        "rsi": 48.2,
+        "technical_note": "Päivälasku -2.13%, hinta 354.72 €, SMA200 387.99 €.",
+        "catalyyti": "Tekninen dippi (RSI 48.2), päivämuutos -2.13%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_AMD",
+        "ticker": "AMD",
+        "action_recommendation": "BUY",
+        "rsi": 29.1,
+        "technical_note": "Päivälasku -5.95%, hinta 528.75 €, SMA200 394.25 €.",
+        "catalyyti": "Tekninen dippi (RSI 29.1), päivämuutos -5.95%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_NFLX",
+        "ticker": "NFLX",
+        "action_recommendation": "BUY",
+        "rsi": 54.4,
+        "technical_note": "Päivälasku -2.86%, hinta 70.53 €, SMA200 82.88 €.",
+        "catalyyti": "Tekninen dippi (RSI 54.4), päivämuutos -2.86%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_INTC",
+        "ticker": "INTC",
+        "action_recommendation": "BUY",
+        "rsi": 16.4,
+        "technical_note": "Päivälasku -5.79%, hinta 89.85 €, SMA200 84.56 €.",
+        "catalyyti": "Tekninen dippi (RSI 16.4), päivämuutos -5.79%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_AVGO",
+        "ticker": "AVGO",
+        "action_recommendation": "BUY",
+        "rsi": 40.1,
+        "technical_note": "Päivälasku -4.52%, hinta 328.75 €, SMA200 367.06 €.",
+        "catalyyti": "Tekninen dippi (RSI 40.1), päivämuutos -4.52%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_ORCL",
+        "ticker": "ORCL",
+        "action_recommendation": "BUY",
+        "rsi": 46.8,
+        "technical_note": "Päivälasku -4.64%, hinta 128.23 €, SMA200 159.03 €.",
+        "catalyyti": "Tekninen dippi (RSI 46.8), päivämuutos -4.64%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_QCOM",
+        "ticker": "QCOM",
+        "action_recommendation": "BUY",
+        "rsi": 29.7,
+        "technical_note": "Päivälasku -3.53%, hinta 172.11 €, SMA200 168.08 €.",
+        "catalyyti": "Tekninen dippi (RSI 29.7), päivämuutos -3.53%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_SMCI",
+        "ticker": "SMCI",
+        "action_recommendation": "BUY",
+        "rsi": 23.3,
+        "technical_note": "Päivälasku -9.86%, hinta 31.63 €, SMA200 32.47 €.",
+        "catalyyti": "Tekninen dippi (RSI 23.3), päivämuutos -9.86%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_COIN",
+        "ticker": "COIN",
+        "action_recommendation": "BUY",
+        "rsi": 37.8,
+        "technical_note": "Päivälasku -5.79%, hinta 173.16 €, SMA200 182.32 €.",
+        "catalyyti": "Tekninen dippi (RSI 37.8), päivämuutos -5.79%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_MARA",
+        "ticker": "MARA",
+        "action_recommendation": "BUY",
+        "rsi": 2.5,
+        "technical_note": "Päivälasku -9.60%, hinta 7.53 €, SMA200 10.95 €.",
+        "catalyyti": "Tekninen dippi (RSI 2.5), päivämuutos -9.60%.",
+        "processed": true
+    }
+]
