@@ -97,5 +97,32 @@
         "technical_note": "Päivälasku -9.60%, hinta 7.53 €, SMA200 10.95 €.",
         "catalyyti": "Tekninen dippi (RSI 2.5), päivämuutos -9.60%.",
         "processed": true
+    },
+    {
+        "id": "2026-10-19_TYRES.HE",
+        "ticker": "TYRES.HE",
+        "action_recommendation": "BUY",
+        "rsi": 11.4,
+        "technical_note": "Päivälasku -4.50%, hinta 13.58 €, SMA200 12.23 €.",
+        "catalyyti": "Tekninen dippi (RSI 11.4), päivämuutos -4.50%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_RHM.DE",
+        "ticker": "RHM.DE",
+        "action_recommendation": "BUY",
+        "rsi": 66.3,
+        "technical_note": "Päivälasku -2.57%, hinta 1062.20 €, SMA200 1300.79 €.",
+        "catalyyti": "Tekninen dippi (RSI 66.3), päivämuutos -2.57%.",
+        "processed": true
+    },
+    {
+        "id": "2026-10-19_MC.PA",
+        "ticker": "MC.PA",
+        "action_recommendation": "BUY",
+        "rsi": 45.6,
+        "technical_note": "Päivälasku -2.00%, hinta 389.05 €, SMA200 477.17 €.",
+        "catalyyti": "Tekninen dippi (RSI 45.6), päivämuutos -2.00%.",
+        "processed": true
     }
 ]
