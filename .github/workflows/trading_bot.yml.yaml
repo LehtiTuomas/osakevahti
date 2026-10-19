@@ -50,3 +50,9 @@ jobs:
           git add portfolio.json signals.json
           git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update portfolio and signals"
           git push
+
+      - name: Commit updated history file
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🤖 Päivitä pörssivahdin muisti (lahetetyt_lokit.txt)"
+          file_pattern: "lahetetyt_lokit.txt"
