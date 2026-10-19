@@ -8,13 +8,10 @@ on:
 jobs:
   run-trading-system:
     runs-on: ubuntu-latest
-    
-    # 🌟 TÄRKEÄ: Tämä kertoo GitHubille, että käytetään SALAISUUDET-ympäristöä
-    environment: SALAISUUDET
-    
     permissions:
       contents: write
-    
+
+    # KOHTA 2: Syötetään Repository secrets -avaimet automaattisesti kaikille skripteille
     env:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
