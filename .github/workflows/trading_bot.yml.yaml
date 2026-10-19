@@ -2,14 +2,22 @@ name: Trading Bot System Workflow
 
 on:
   schedule:
-    - cron: '0 16 * * 1-5' # Arkisin klo 18.00 Suomen aikaa
+    - cron: '0 16 * * 1-5'
   workflow_dispatch:
 
 jobs:
   run-trading-system:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Antaa luvan tallentaa portfolio.json & signals.json
+      contents: write
+    
+    # 🌟 GLOBAALIT YMPÄRISTÖMUUTTUJAT KOKO AJOLLE (kuten vanhassa botissa)
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -24,26 +32,14 @@ jobs:
           pip install groq yfinance pandas requests
 
       - name: Run Market Scanner (Botti 1)
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python poerssivahti.py
 
       - name: Run Paper Trader (Botti 2)
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python paper_trader.py
 
       - name: Run Telegram QA Listener
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python telegram_qa_bot.py
 
