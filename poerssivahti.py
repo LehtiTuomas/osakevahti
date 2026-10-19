@@ -7,6 +7,13 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+# Testataan mitä GitHub Actions oikeasti välittää sisään:
+print("--- YMPÄRISTÖMUUTTUJIEN TESTI ---")
+print("GROQ_API_KEY pituus:", len(os.environ.get("GROQ_API_KEY", "")))
+print("TELEGRAM_BOT_TOKEN pituus:", len(os.environ.get("TELEGRAM_BOT_TOKEN", "")))
+print("TELEGRAM_CHAT_ID pituus:", len(os.environ.get("TELEGRAM_CHAT_ID", "")))
+print("---------------------------------")
+
 # API-avaimet & Tiedostot
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
