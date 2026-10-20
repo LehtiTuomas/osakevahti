@@ -12,7 +12,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Siivottu seurantalista (poistettu virheelliset/delisted-osakkeet)
+# Siivottu seurantalista (98 kohdetta)
 TICKERS = [
     # Indeksit (4)
     "^GDAXI", "^NDX", "^GSPC", "^OMXH25",
@@ -340,8 +340,9 @@ def paivita_salkku_html():
                     <th>Avauspvm</th>
                     <th>Panos</th>
                     <th>Sisääntulo</th>
-                    <th>Stop-Loss</th>
-                    <th>Take Profit (Tavoite)</th>
+                    <th>Nykyhinta</th>
+                    <th>Tuotto (€ / %)</th>
+                    <th>Stop-Loss / Tavoite</th>
                     <th>Tila</th>
                 </tr>
     """
@@ -350,6 +351,18 @@ def paivita_salkku_html():
   for pos in salkku["positiot"]:
     if pos["tila"] == "AVOIN":
       avoimia_löytyy = True
+      try:
+        ticker_obj = yf.Ticker(pos["ticker"])
+        nykyhinta = ticker_obj.history(period="1d")["Close"].iloc[-1]
+      except:
+        nykyhinta = pos["ostohinta"]
+
+      # Lasketaan tuotto
+      positio_arvo_nyt = pos["panos"] * (nykyhinta / pos["ostohinta"])
+      tuotto_eur = positio_arvo_nyt - pos["panos"]
+      tuotto_pct = ((nykyhinta - pos["ostohinta"]) / pos["ostohinta"]) * 100
+      tuotto_style = "pos" if tuotto_eur >= 0 else "neg"
+
       tila_teksti = "Aktiivinen (Osavoitto otettu)" if pos["osavoitto_kotiutettu"] else "Aktiivinen"
       html_content += f"""
                 <tr>
@@ -357,14 +370,15 @@ def paivita_salkku_html():
                     <td>{pos['pvm']}</td>
                     <td>{pos['panos']:.2f} €</td>
                     <td>{pos['ostohinta']:.2f} €</td>
-                    <td class="neg">{pos['stop_loss']:.2f} €</td>
-                    <td class="pos">{pos['tavoite']:.2f} €</td>
+                    <td><b>{nykyhinta:.2f} €</b></td>
+                    <td><span class="{tuotto_style}">{'+' if tuotto_eur >= 0 else ''}{tuotto_eur:.2f} € ({'+' if tuotto_pct >= 0 else ''}{tuotto_pct:.2f}%)</span></td>
+                    <td><span class="neg">SL: {pos['stop_loss']:.2f} €</span><br><span class="pos">TP: {pos['tavoite']:.2f} €</span></td>
                     <td><span class="badge">{tila_teksti}</span></td>
                 </tr>
     """
 
   if not avoimia_löytyy:
-    html_content += "<tr><td colspan='7' style='text-align: center; color: #777;'>Ei avoimia positioita tällä hetkellä.</td></tr>"
+    html_content += "<tr><td colspan='8' style='text-align: center; color: #777;'>Ei avoimia positioita tällä hetkellä.</td></tr>"
 
   html_content += """
             </table>
@@ -405,7 +419,7 @@ def paivita_salkku_html():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("Botti 2: Salkun HTML-sivu päivitetty Suomen ajassa!")
+  print("Botti 2: Salkun HTML-sivu päivitetty reaaliaikaisilla tuotoilla!")
 
 
 # --- PÄÄOHJELMA ---
