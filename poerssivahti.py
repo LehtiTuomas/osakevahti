@@ -11,8 +11,36 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Seurattavat osakkeet
-TICKERS = ["NOKIA.HE", "UPM.HE", "WRT1V.HE", "SIE.DE", "PLTR", "NVDA", "AAPL"]
+# Seurantalista (98 kohdetta: Indeksit, Pohjoismaat, Eurooppa, USA)
+TICKERS = [
+    # Indeksit (4)
+    "^GDAXI", "^NDX", "^GSPC", "^OMXH25",
+
+    # Suomi / OMXH (Nordnet Mini Long / Futuurit)
+    "NOKIA.HE", "NESTE.HE", "UPM.HE", "FORTUM.HE", "KNEBV.HE", 
+    "SAMPO.HE", "NDA-FI.HE", "WRT1V.HE", "VALMT.HE", "METSA.HE",
+    "OUT1V.HE", "TYRES.HE", "ORNBV.HE", "HUH1V.HE", "ELISA.HE",
+    "KESKOB.HE", "KEMIRA.HE", "MEO1V.HE", "QTCOM.HE", "KOJAMO.HE",
+
+    # Ruotsi & Pohjoismaat
+    "VOLV-B.ST", "INVE-B.ST", "EQT.ST", "HM-B.ST", "ERIC-B.ST",
+    "SEB-A.ST", "SWED-A.ST", "SHB-A.ST", "NOVO-B.CO", "MAERSK-B.CO",
+
+    # Eurooppa (Saksa, Ranska, Hollanti)
+    "SAP.DE", "SIE.DE", "ALV.DE", "BMW.DE", "MBG.DE", "VOW3.DE",
+    "DTG.DE", "BAS.DE", "DTE.DE", "RHM.DE", "AIR.PA", "OR.PA",
+    "MC.PA", "TTE.PA", "ASML.AS", "INGA.AS", "ADEN.AS",
+
+    # USA - Jätit & Teknot
+    "NVDA", "TSLA", "AAPL", "MSFT", "AMZN", "GOOGL", "AMD", "META",
+    "NFLX", "INTC", "CRM", "AVGO", "ORCL", "QCOM", "PLTR", "PALO",
+    "SMCI", "COIN", "MARA", "PYPL", "SQ", "UBER", "ABNB", "DIS",
+
+    # USA - Teollisuus, Rahoitus, Terveydenhuolto & Kulutus
+    "JPM", "BAC", "GS", "MS", "C", "V", "MA", "JNJ", "PFE", "LLY",
+    "UNH", "ABBV", "MRK", "PG", "KO", "PEP", "COST", "WMT", "NKE",
+    "CAT", "DE", "BA", "GE", "XOM", "CVX"
+]
 HISTORY_FILE = "lahetetyt_lokit.txt"
 PORTFOLIO_FILE = "salkku_data.json"
 
