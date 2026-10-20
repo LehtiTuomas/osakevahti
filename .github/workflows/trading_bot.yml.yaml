@@ -1,58 +1,39 @@
-name: Trading Bot System Workflow V2
+name: Poerssivahti ja Botti 2
 
 on:
   schedule:
-    - cron: '0 16 * * 1-5' # Arkisin klo 18.00 Suomen aikaa
-  workflow_dispatch:
+    - cron: '0 1 * * 1-5'  # Ajo yöllä ma-pe, kun pörssit ovat sulkeutuneet
+  workflow_dispatch:       # Mahdollistaa myös manuaalisen käynnistyksen
 
 jobs:
-  run-trading-system:
+  run-bots:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    # KOHTA 2: Syötetään Repository secrets -avaimet automaattisesti kaikille skripteille
-    env:
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          pip install groq yfinance pandas requests
+          python -m pip install --upgrade pip
+          pip install pandas requests yfinance groq
 
-      - name: Run Market Scanner (Botti 1)
-        run: |
-          python poerssivahti.py
+      - name: Run Poerssivahti & Botti 2
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python poerssivahti.py
 
-      - name: Run Paper Trader (Botti 2)
-        run: |
-          python paper_trader.py
-
-      - name: Run Telegram QA Listener
-        run: |
-          python telegram_qa_bot.py
-
-      - name: Commit and Push Updated Portfolio & Signals
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add portfolio.json signals.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update portfolio and signals"
-          git push
-
-      - name: Commit updated history file
+      # TÄMÄ VAIHE KORJAA VIRHEEN:
+      - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "🤖 Päivitä pörssivahdin muisti (lahetetyt_lokit.txt)"
-          file_pattern: "lahetetyt_lokit.txt"
+          commit_message: "🤖 Päivitetty pörssivahdin muisti, salkku ja index.html"
+          file_pattern: "lahetetyt_lokit.txt salkku_data.json index.html"
+          skip_empty_commit: true
