@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import pandas as pd
 import requests
 import yfinance as yf
@@ -11,7 +12,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Seurantalista (98 kohdetta: Indeksit, Pohjoismaat, Eurooppa, USA)
+# Siivottu seurantalista (poistettu virheelliset/delisted-osakkeet)
 TICKERS = [
     # Indeksit (4)
     "^GDAXI", "^NDX", "^GSPC", "^OMXH25",
@@ -20,7 +21,7 @@ TICKERS = [
     "NOKIA.HE", "NESTE.HE", "UPM.HE", "FORTUM.HE", "KNEBV.HE", 
     "SAMPO.HE", "NDA-FI.HE", "WRT1V.HE", "VALMT.HE", "METSA.HE",
     "OUT1V.HE", "TYRES.HE", "ORNBV.HE", "HUH1V.HE", "ELISA.HE",
-    "KESKOB.HE", "KEMIRA.HE", "MEO1V.HE", "QTCOM.HE", "KOJAMO.HE",
+    "KESKOB.HE", "KEMIRA.HE", "QTCOM.HE",
 
     # Ruotsi & Pohjoismaat
     "VOLV-B.ST", "INVE-B.ST", "EQT.ST", "HM-B.ST", "ERIC-B.ST",
@@ -29,12 +30,12 @@ TICKERS = [
     # Eurooppa (Saksa, Ranska, Hollanti)
     "SAP.DE", "SIE.DE", "ALV.DE", "BMW.DE", "MBG.DE", "VOW3.DE",
     "DTG.DE", "BAS.DE", "DTE.DE", "RHM.DE", "AIR.PA", "OR.PA",
-    "MC.PA", "TTE.PA", "ASML.AS", "INGA.AS", "ADEN.AS",
+    "MC.PA", "TTE.PA", "ASML.AS", "INGA.AS",
 
     # USA - Jätit & Teknot
     "NVDA", "TSLA", "AAPL", "MSFT", "AMZN", "GOOGL", "AMD", "META",
     "NFLX", "INTC", "CRM", "AVGO", "ORCL", "QCOM", "PLTR", "PALO",
-    "SMCI", "COIN", "MARA", "PYPL", "SQ", "UBER", "ABNB", "DIS",
+    "SMCI", "COIN", "MARA", "PYPL", "UBER", "ABNB", "DIS",
 
     # USA - Teollisuus, Rahoitus, Terveydenhuolto & Kulutus
     "JPM", "BAC", "GS", "MS", "C", "V", "MA", "JNJ", "PFE", "LLY",
@@ -44,6 +45,8 @@ TICKERS = [
 HISTORY_FILE = "lahetetyt_lokit.txt"
 PORTFOLIO_FILE = "salkku_data.json"
 
+def get_finland_time():
+    return datetime.now(ZoneInfo("Europe/Helsinki"))
 
 def send_telegram_message(message):
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -53,7 +56,7 @@ def send_telegram_message(message):
 
 # --- BOTTI 1: VIIKKOMUISTI, UUTISET JA DIPPIVAHTI ---
 def lue_historia():
-  current_week = datetime.now().strftime("%Y-W%V")
+  current_week = get_finland_time().strftime("%Y-W%V")
   if os.path.exists(HISTORY_FILE):
     with open(HISTORY_FILE, "r") as f:
       rivit = f.read().splitlines()
@@ -62,14 +65,13 @@ def lue_historia():
 
 
 def tallenna_historia(ticker_symbol):
-  current_week = datetime.now().strftime("%Y-W%V")
+  current_week = get_finland_time().strftime("%Y-W%V")
   record = f"{ticker_symbol}_{current_week}"
   with open(HISTORY_FILE, "a") as f:
     f.write(record + "\n")
 
 
 def hae_uutiset_ja_keskustelut(ticker_obj):
-  """Hakee osakkeen tuoreet uutiset fundamenttianalyysia varten"""
   try:
     news_list = ticker_obj.news
     otsikot = []
@@ -94,7 +96,6 @@ def botti_1_analysoi(ticker_symbol):
   if len(df) < 200:
     return None, None, None
 
-  # 1. Päivätason tekninen laskenta
   df["SMA200"] = df["Close"].rolling(window=200).mean()
   delta = df["Close"].diff()
   gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
@@ -107,7 +108,6 @@ def botti_1_analysoi(ticker_symbol):
   current_rsi = df["RSI"].iloc[-1]
   sma200 = df["SMA200"].iloc[-1]
 
-  # Päivätason esisuodatus
   is_dipping = day_change_pct <= -1.5
   is_rsi_low = current_rsi <= 45
   is_in_long_term_uptrend = current_price > (sma200 * 0.95)
@@ -115,22 +115,16 @@ def botti_1_analysoi(ticker_symbol):
   if not ((is_dipping or is_rsi_low) and is_in_long_term_uptrend):
     return None, None, None
 
-  # 2. Tuntitason tarkistus: Viimeisen 4h momentum oltava positiivinen/vihreä
   try:
     df_hourly = ticker.history(period="5d", interval="1h")
     if not df_hourly.empty and len(df_hourly) >= 4:
       last_4_hours = df_hourly.tail(4)
       price_4h_ago = last_4_hours["Close"].iloc[0]
       if current_price < price_4h_ago:
-        print(
-            f"[{ticker_symbol}] Hylätty: Viimeisen 4h kynttilät edelleen"
-            " laskussa."
-        )
         return None, None, None
-  except Exception as e:
-    print(f"[{ticker_symbol}] Tuntidatan tarkistus epäonnistui: {e}")
+  except Exception:
+    pass
 
-  # 3. AI-pohjainen uutiset & fundamentit -suodatus
   uutis_teksti = hae_uutiset_ja_keskustelut(ticker)
 
   client = Groq(api_key=GROQ_API_KEY)
@@ -138,7 +132,6 @@ def botti_1_analysoi(ticker_symbol):
 Olet kokenut osakeanalyytikko. Tarkista, onko kyseessä terveellinen dippi nousutrendissä vai fundamentaalisesti rikki oleva yhtiö.
 OSAKE: {ticker_symbol}
 - Hinta: {current_price:.2f} | Päivämuutos: {day_change_pct:.2f}% | RSI: {current_rsi:.1f}
-- Viimeisen 4h momentum: Vahvistettu käänne ylöspäin
 - TUOREET UUTISET / MARKKINATUNNELMA: "{uutis_teksti}"
 
 Vastaa TÄSMÄLLEEN muodossa:
@@ -172,9 +165,7 @@ def tallenna_salkku(salkku):
     json.dump(salkku, f, indent=4, ensure_ascii=False)
 
 
-def botti_2_tee_sijoituspaatos(
-    ticker_symbol, current_price, sma200, botti_1_analyysi
-):
+def botti_2_tee_sijoituspaatos(ticker_symbol, current_price, sma200, botti_1_analyysi):
   salkku = lataa_salkku()
 
   for pos in salkku["positiot"]:
@@ -185,9 +176,8 @@ def botti_2_tee_sijoituspaatos(
 
   client = Groq(api_key=GROQ_API_KEY)
   prompt = f"""
-Olet itsenäinen, kylmäverinen viputuotteiden (Nordnet Mini Long) treidausbotti. 
+Olet itsenäinen, kylmäverinen viputuotteiden (Nordnet Mini Long -minifutuuri) treidausbotti. 
 Käteiskassa on {salkku['kassa']:.2f} €. Max panos tälle treidille on {max_risk_eur:.2f} €.
-Tavoite: 2/3 voitollisia treidejä.
 
 Botti 1 analyysi: "{botti_1_analyysi}"
 Kohteen tiedot: {ticker_symbol} | Hinta: {current_price:.2f} | Tukitaso (SMA200): {sma200:.2f}
@@ -210,13 +200,7 @@ Jos ei sijoitettaisi, aseta "sijoita": false.
         messages=[{"role": "user", "content": prompt}],
         temperature=0.1,
     )
-    res_text = (
-        response.choices[0]
-        .message.content.strip()
-        .replace("```json", "")
-        .replace("```", "")
-        .strip()
-    )
+    res_text = response.choices[0].message.content.strip().replace("```json", "").replace("```", "").strip()
     data = json.loads(res_text)
 
     if data.get("sijoita"):
@@ -228,7 +212,7 @@ Jos ei sijoitettaisi, aseta "sijoita": false.
           "panos": data["panos"],
           "stop_loss": data["stop_loss"],
           "tavoite": data["ensimmainen_tukitaso_tavoite"],
-          "pvm": datetime.now().strftime("%Y-%m-%d"),
+          "pvm": get_finland_time().strftime("%Y-%m-%d"),
           "osavoitto_kotiutettu": False,
       }
       salkku["kassa"] -= data["panos"]
@@ -236,10 +220,12 @@ Jos ei sijoitettaisi, aseta "sijoita": false.
       tallenna_salkku(salkku)
 
       viesti = (
-          f"🤖 <b>BOTTI 2: UUSI TREIDI AVATTU</b> 🤖\n- Kohde:"
-          f" {ticker_symbol}\n- Panos: {data['panos']:.2f} €\n- Perustelu:"
-          f" {data['perustelu']}\n- Stop-Loss: {data['stop_loss']:.2f}\n- Take"
-          f" Profit (Tavoite): {data['ensimmainen_tukitaso_tavoite']:.2f}"
+          f"🤖 <b>BOTTI 2: UUSI MINI LONG -TREIDI AVATTU</b> 🤖\n"
+          f"- Kohde: {ticker_symbol} (Viputuote / Minifutuuri)\n"
+          f"- Panos: {data['panos']:.2f} €\n"
+          f"- Perustelu: {data['perustelu']}\n"
+          f"- Stop-Loss: {data['stop_loss']:.2f}\n"
+          f"- Take Profit (Tavoite): {data['ensimmainen_tukitaso_tavoite']:.2f}"
       )
       send_telegram_message(viesti)
   except Exception as e:
@@ -259,7 +245,6 @@ def paivita_avoimet_treidit():
     except:
       continue
 
-    # Osavoitto ensimmäisellä tukitasolla (50% pois, stop-loss sisäänhintaan)
     if not pos["osavoitto_kotiutettu"] and current_price >= pos["tavoite"]:
       pos["osavoitto_kotiutettu"] = True
       myyty_osuus = (pos["panos"] / 2) * (current_price / pos["ostohinta"])
@@ -267,19 +252,17 @@ def paivita_avoimet_treidit():
       pos["stop_loss"] = pos["ostohinta"]
       muutos_tehty = True
       send_telegram_message(
-          f"🎯 <b>BOTTI 2: OSAVOITTO KOTIUTETTU ({pos['ticker']})</b>\nKurssi"
-          f" saavutti tason {current_price:.2f}. Myyty 50% potista, riskitön"
-          " loppupositio!"
+          f"🎯 <b>BOTTI 2: OSAVOITTO KOTIUTETTU ({pos['ticker']} Mini Long)</b>\n"
+          f"Kurssi saavutti tason {current_price:.2f}. Myyty 50% potista, riskitön loppupositio!"
       )
-    # Stop-loss
     elif current_price <= pos["stop_loss"]:
       pos["tila"] = "SULJETTU"
       jain_arvo = pos["panos"] * (current_price / pos["ostohinta"])
       salkku["kassa"] += jain_arvo
       muutos_tehty = True
       send_telegram_message(
-          f"🛑 <b>BOTTI 2: STOP-LOSS LAUKESI ({pos['ticker']})</b>\nPositio"
-          f" suljettu hintaan {current_price:.2f}."
+          f"🛑 <b>BOTTI 2: STOP-LOSS LAUKESI ({pos['ticker']} Mini Long)</b>\n"
+          f"Positio suljettu hintaan {current_price:.2f}."
       )
 
   if muutos_tehty:
@@ -301,11 +284,7 @@ def paivita_salkku_html():
 
   kokonaissaldo = salkku["kassa"] + avoimet_arvo
   kokonaistuotto_eur = kokonaissaldo - salkku["alkupääoma"]
-  kokonaistuotto_pct = (
-      (kokonaistuotto_eur / salkku["alkupääoma"]) * 100
-      if salkku["alkupääoma"] > 0
-      else 0
-  )
+  kokonaistuotto_pct = ((kokonaistuotto_eur / salkku["alkupääoma"]) * 100) if salkku["alkupääoma"] > 0 else 0
   saldo_style = "pos" if kokonaistuotto_eur >= 0 else "neg"
 
   html_content = f"""
@@ -313,7 +292,7 @@ def paivita_salkku_html():
     <html lang="fi">
     <head>
         <meta charset="UTF-8">
-        <title>Botti 2 - Autonominen Treidaussalkku</title>
+        <title>Botti 2 - Autonominen Mini Long Treidaussalkku</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }}
@@ -336,8 +315,8 @@ def paivita_salkku_html():
     </head>
     <body>
         <div class="container">
-            <h1>Botti 2: Autonominen Treidaussalkku</h1>
-            <div class="subtitle">Alkupääoma: {salkku['alkupääoma']:.2f} € | Päivitetty: {datetime.now().strftime("%d.%m.%Y klo %H:%M")}</div>
+            <h1>Botti 2: Autonominen Treidaussalkku (Mini Long)</h1>
+            <div class="subtitle">Alkupääoma: {salkku['alkupääoma']:.2f} € | Päivitetty (Suomen aika): {get_finland_time().strftime("%d.%m.%Y klo %H:%M")}</div>
             
             <div class="summary-grid">
                 <div class="card">
@@ -354,10 +333,10 @@ def paivita_salkku_html():
                 </div>
             </div>
 
-            <h2>Käynnissä olevat treidit (Avoimet positiot)</h2>
+            <h2>Käynnissä olevat treidit (Avoimet Mini Long -positiot)</h2>
             <table>
                 <tr>
-                    <th>Osake</th>
+                    <th>Kohde / Tyyppi</th>
                     <th>Avauspvm</th>
                     <th>Panos</th>
                     <th>Sisääntulo</th>
@@ -371,14 +350,10 @@ def paivita_salkku_html():
   for pos in salkku["positiot"]:
     if pos["tila"] == "AVOIN":
       avoimia_löytyy = True
-      tila_teksti = (
-          "Aktiivinen (Osavoitto otettu)"
-          if pos["osavoitto_kotiutettu"]
-          else "Aktiivinen"
-      )
+      tila_teksti = "Aktiivinen (Osavoitto otettu)" if pos["osavoitto_kotiutettu"] else "Aktiivinen"
       html_content += f"""
                 <tr>
-                    <td><b>{pos['ticker']}</b></td>
+                    <td><b>{pos['ticker']}</b><br><span style="font-size: 0.8em; color: #666;">Nordnet Mini Long</span></td>
                     <td>{pos['pvm']}</td>
                     <td>{pos['panos']:.2f} €</td>
                     <td>{pos['ostohinta']:.2f} €</td>
@@ -389,10 +364,7 @@ def paivita_salkku_html():
     """
 
   if not avoimia_löytyy:
-    html_content += (
-        "<tr><td colspan='7' style='text-align: center; color:"
-        " #777;'>Ei avoimia positioita tällä hetkellä.</td></tr>"
-    )
+    html_content += "<tr><td colspan='7' style='text-align: center; color: #777;'>Ei avoimia positioita tällä hetkellä.</td></tr>"
 
   html_content += """
             </table>
@@ -400,7 +372,7 @@ def paivita_salkku_html():
             <h2>Tehdyt treidit (Historia)</h2>
             <table>
                 <tr>
-                    <th>Osake</th>
+                    <th>Kohde</th>
                     <th>Avauspvm</th>
                     <th>Alkupanos</th>
                     <th>Päätöstila</th>
@@ -421,14 +393,11 @@ def paivita_salkku_html():
     """
 
   if not historiaa_löytyy:
-    html_content += (
-        "<tr><td colspan='4' style='text-align: center; color:"
-        " #777;'>Ei vielä suljettuja treidejä.</td></tr>"
-    )
+    html_content += "<tr><td colspan='4' style='text-align: center; color: #777;'>Ei vielä suljettuja treidejä.</td></tr>"
 
   html_content += f"""
             </table>
-            <div class="footer">Autonominen Treidausbotti &bull; Generoitu automaattisesti GitHub Actionsilla</div>
+            <div class="footer">Autonominen Mini Long Treidausbotti &bull; Generoitu automaattisesti GitHub Actionsilla</div>
         </div>
     </body>
     </html>
@@ -436,7 +405,7 @@ def paivita_salkku_html():
 
   with open("index.html", "w", encoding="utf-8") as f:
     f.write(html_content)
-  print("Botti 2: Salkun HTML-sivu päivitetty!")
+  print("Botti 2: Salkun HTML-sivu päivitetty Suomen ajassa!")
 
 
 # --- PÄÄOHJELMA ---
@@ -448,7 +417,7 @@ def main():
     try:
       current_price, sma200, analyysi = botti_1_analysoi(ticker)
       if current_price and analyysi:
-        current_week = datetime.now().strftime("%Y-W%V")
+        current_week = get_finland_time().strftime("%Y-W%V")
         if f"{ticker}_{current_week}" not in lahetetyt_viikolla:
           print(f"[{ticker}] Botti 1 hyväksyi kohteen uutis- ja teknisellä seulalla!")
           botti_2_tee_sijoituspaatos(ticker, current_price, sma200, analyysi)
@@ -459,10 +428,6 @@ def main():
   print("\n--- Botti 2: Päivitetään avoimet treidit & HTML-sivu ---")
   paivita_avoimet_treidit()
   paivita_salkku_html()
-
-
-if __name__ == "__main__":
-  main()
 
 
 if __name__ == "__main__":
