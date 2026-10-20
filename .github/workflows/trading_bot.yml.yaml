@@ -36,4 +36,4 @@ jobs:
         with:
           commit_message: "🤖 Päivitetty pörssivahdin muisti, salkku ja index.html"
           file_pattern: "lahetetyt_lokit.txt salkku_data.json index.html"
-          skip_empty_commit: true
+          commit_options: '--allow-empty-message'
