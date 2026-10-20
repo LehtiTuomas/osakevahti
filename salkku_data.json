@@ -1,5 +1,5 @@
 {
-    "kassa": 1968.3,
+    "kassa": 1162.2599999999998,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -43,6 +43,61 @@
             "panos": 218.7,
             "stop_loss": 241.1,
             "tavoite": 269.02,
+            "pvm": "2026-10-20",
+            "osavoitto_kotiutettu": false
+        },
+        {
+            "id": 5,
+            "ticker": "FORTUM.HE",
+            "tila": "AVOIN",
+            "ostohinta": 23.06999969482422,
+            "panos": 196.83,
+            "stop_loss": 21.92,
+            "tavoite": 24.45,
+            "pvm": "2026-10-20",
+            "osavoitto_kotiutettu": false
+        },
+        {
+            "id": 6,
+            "ticker": "TYRES.HE",
+            "tila": "AVOIN",
+            "ostohinta": 13.619999885559082,
+            "panos": 177.15,
+            "stop_loss": 12.94,
+            "tavoite": 14.44,
+            "pvm": "2026-10-20",
+            "osavoitto_kotiutettu": false
+        },
+        {
+            "id": 7,
+            "ticker": "HUH1V.HE",
+            "tila": "AVOIN",
+            "ostohinta": 27.5,
+            "panos": 159.43,
+            "stop_loss": 26.12,
+            "tavoite": 29.15,
+            "pvm": "2026-10-20",
+            "osavoitto_kotiutettu": false
+        },
+        {
+            "id": 8,
+            "ticker": "DTG.DE",
+            "tila": "AVOIN",
+            "ostohinta": 41.77000045776367,
+            "panos": 143.49,
+            "stop_loss": 39.68,
+            "tavoite": 44.28,
+            "pvm": "2026-10-20",
+            "osavoitto_kotiutettu": false
+        },
+        {
+            "id": 9,
+            "ticker": "INGA.AS",
+            "tila": "AVOIN",
+            "ostohinta": 30.059999465942383,
+            "panos": 129.14,
+            "stop_loss": 28.56,
+            "tavoite": 31.86,
             "pvm": "2026-10-20",
             "osavoitto_kotiutettu": false
         }
