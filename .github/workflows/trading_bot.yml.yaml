@@ -2,8 +2,9 @@ name: Poerssivahti ja Botti 2
 
 on:
   schedule:
-    - cron: '0 1 * * 1-5'  # Ajo yöllä ma-pe, kun pörssit ovat sulkeutuneet
-  workflow_dispatch:       # Mahdollistaa myös manuaalisen käynnistyksen
+    # Ajo klo 23:30 UTC = klo 01:30 / 02:30 Suomen aikaa (riippuen kesä/talviajasta)
+    - cron: '30 23 * * 1-5'
+  workflow_dispatch:
 
 jobs:
   run-bots:
