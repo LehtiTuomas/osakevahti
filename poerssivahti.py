@@ -291,7 +291,7 @@ def paivita_avoimet_treidit():
 
         vipu = pos.get("vipu", 1)
 
-        # 1. Stop-Loss tarkistus (Lasketaan TAPPIO oikein)
+        # 1. Stop-Loss tarkistus
         if paivan_alin <= pos["stop_loss"]:
             pos["tila"] = "SULJETTU"
             hinnan_muutos_pct = (pos["stop_loss"] - pos["ostohinta"]) / pos["ostohinta"]
@@ -300,7 +300,7 @@ def paivita_avoimet_treidit():
             panos_osa = pos["panos"] * jella_oleva_osuus
             loppuarvo = max(0, panos_osa * (1 + vivutettu_tulos_pct))
             
-            tulos_eur = loppuarvo - panos_osa  # Tappiolla tämä on negatiivinen eurosumma
+            tulos_eur = loppuarvo - panos_osa
             pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
             pos["toteutunut_tulos_pct"] = vivutettu_tulos_pct * 100
             pos["sulkusyy"] = f"Stop-Loss laukesi (Päivän alin {paivan_alin:.2f} € alitti tason {pos['stop_loss']:.2f} €)"
@@ -404,30 +404,72 @@ def paivita_salkku_html():
         <title>Botti 2 - Autonominen Viputreidaussalkku</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }}
-            .container {{ max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
-            h1 {{ color: #1a73e8; text-align: center; margin-bottom: 5px; }}
-            .subtitle {{ text-align: center; color: #666; font-size: 0.9em; margin-bottom: 30px; }}
-            .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }}
-            .card {{ background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #1a73e8; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }}
-            .card h3 {{ margin: 0 0 10px 0; color: #555; font-size: 0.95em; }}
-            .card p {{ margin: 0; font-size: 1.5em; font-weight: bold; color: #222; }}
-            h2 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }}
-            th, td {{ padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; font-size: 0.93em; vertical-align: top; }}
-            th {{ background-color: #f8f9fa; color: #444; font-weight: 600; }}
+            * {{ box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }}
+            .container {{ max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+            h1 {{ color: #1a73e8; text-align: center; margin-bottom: 5px; font-size: 1.8em; }}
+            .subtitle {{ text-align: center; color: #666; font-size: 0.88em; margin-bottom: 20px; }}
+            
+            .strategy-box {{ background: #eef5fe; border: 1px solid #d0e1fd; border-left: 5px solid #1a73e8; padding: 15px 18px; border-radius: 8px; margin-bottom: 25px; font-size: 0.88em; color: #2c3e50; line-height: 1.5; }}
+            .strategy-box h4 {{ margin: 0 0 6px 0; color: #1a73e8; font-size: 1.05em; display: flex; align-items: center; gap: 6px; }}
+            .strategy-box ul {{ margin: 6px 0 0 0; padding-left: 20px; }}
+            .strategy-box li {{ margin-bottom: 4px; }}
+
+            .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }}
+            .card {{ background: #f8f9fa; padding: 18px; border-radius: 8px; border-left: 5px solid #1a73e8; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }}
+            .card h3 {{ margin: 0 0 5px 0; color: #555; font-size: 0.85em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }}
+            .card p {{ margin: 0; font-size: 1.4em; font-weight: bold; color: #222; }}
+            
+            h2 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; font-size: 1.25em; }}
+            
+            .table-responsive {{ width: 100%; overflow-x: auto; margin-bottom: 30px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }}
+            th, td {{ padding: 12px 10px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: top; }}
+            th {{ background-color: #f8f9fa; color: #444; font-weight: 600; white-space: nowrap; }}
+            
+            .nowrap {{ white-space: nowrap; }}
             .pos {{ color: #2e7d32; font-weight: bold; }}
             .neg {{ color: #c62828; font-weight: bold; }}
-            .badge {{ background: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }}
-            .reason-box {{ font-size: 0.88em; color: #555; background: #fafafa; padding: 6px 10px; border-radius: 4px; border: 1px solid #eee; margin-top: 4px; }}
-            .footer {{ text-align: center; margin-top: 40px; font-size: 0.85em; color: #888; }}
+            .badge {{ background: #e3f2fd; color: #1565c0; padding: 3px 6px; border-radius: 4px; font-size: 0.8em; font-weight: 600; display: inline-block; white-space: nowrap; }}
+            .reason-box {{ font-size: 0.85em; color: #555; background: #fafafa; padding: 8px 10px; border-radius: 6px; border: 1px solid #eee; line-height: 1.35; }}
+            .footer {{ text-align: center; margin-top: 35px; font-size: 0.8em; color: #888; }}
+
+            /* MOBIILINÄKYMÄ (Puhelimen ruudulla korttinäkymä) */
+            @media screen and (max-width: 768px) {{
+                body {{ padding: 10px; }}
+                .container {{ padding: 15px; }}
+                h1 {{ font-size: 1.4em; }}
+                
+                table, thead, tbody, th, td, tr {{ display: block; }}
+                thead {{ display: none; }}
+                
+                tr {{ margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }}
+                td {{ display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.88em; }}
+                td:last-child {{ border-bottom: none; flex-direction: column; align-items: flex-start; gap: 4px; padding-top: 10px; }}
+                
+                td::before {{ content: attr(data-label); font-weight: 600; color: #666; margin-right: 15px; flex-shrink: 0; }}
+                .nowrap {{ white-space: normal; }}
+                .reason-box {{ width: 100%; margin-top: 4px; }}
+            }}
         </style>
     </head>
     <body>
         <div class="container">
             <h1>Botti 2: Autonominen Treidaussalkku (Mini Long)</h1>
-            <div class="subtitle">Alkupääoma: {salkku['alkupääoma']:.2f} € | Päivitetty (Suomen aika): {get_finland_time().strftime("%d.%m.%Y klo %H:%M")}</div>
+            <div class="subtitle">Alkupääoma: {salkku['alkupääoma']:.2f} € | Päivitetty: {get_finland_time().strftime("%d.%m.%Y klo %H:%M")}</div>
             
+            <div class="strategy-box">
+                <h4>📊 Osakevalintastrategia & Kriteerit</h4>
+                Salkkuun hyväksytään vain poikkeuksellisen vahvat swing-paikat Nordnet Mini Long -tuotteilla noudattaen näitä sääntöjä:
+                <ul>
+                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla vahvassa pitkän aikavälin nousutrendissä eli <b>yli 97% suhteessa 200 päivän liukuvaan keskiarvoon (SMA200)</b>.</li>
+                    <li><b>Dippi / Ylilyönti:</b> Mukaan haetaan tilapäistä korjausliikettä, eli päiväkohtainen lasku on <b>vähintään -2.0%</b> tai 14 päivän <b>RSI on ≤ 40</b>.</li>
+                    <li><b>Momentumin vakautuminen:</b> Viimeisen 4 tunnin kynttilöiden perusteella varmistetaan, ettei kurssi ole vapaassa pudotuksessa ostohetkellä.</li>
+                    <li><b>Fundamentti- ja uutissuodatin:</b> Groq-tekoäly lukee tuoreet uutiset ja tulosjulkaisutiedotteet. Dippi hylätään heti, jos taustalla on fundamentaalinen ongelma (kuten tulosvaroitus tai strateginen kriisi).</li>
+                    <li><b>2/3 Voittotavoite & Riskienhallinta:</b> Botti 2 valitsee viputason (1–10x) ja sijoituspanoksen (vähintään 100 €) siten, että kunkin kaupan Stop-Loss -maksimitappio on enintään 10% salkun kokonaisarvosta ja risk/reward-suhde tukee vähintään ~67% voittoprosenttia.</li>
+                </ul>
+            </div>
+
             <div class="summary-grid">
                 <div class="card">
                     <h3>Kokonaissaldo</h3>
@@ -444,17 +486,21 @@ def paivita_salkku_html():
             </div>
 
             <h2>Käynnissä olevat treidit (Avoimet Mini Long -positiot)</h2>
-            <table>
-                <tr>
-                    <th>Kohde / Vipu</th>
-                    <th>Avauspvm</th>
-                    <th>Panos</th>
-                    <th>Sisääntulo</th>
-                    <th>Nykyhinta</th>
-                    <th>Tuotto (€ / %)</th>
-                    <th>Stop-Loss / Tavoite</th>
-                    <th>Ostoperustelu (Botti 1 & 2)</th>
-                </tr>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kohde / Vipu</th>
+                            <th>Avauspvm</th>
+                            <th>Panos</th>
+                            <th>Sisääntulo</th>
+                            <th>Nykyhinta</th>
+                            <th>Tuotto (€ / %)</th>
+                            <th>Stop-Loss / Tavoite</th>
+                            <th>Ostoperustelu (Botti 1 & 2)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     """
 
     avoimia_löytyy = False
@@ -477,14 +523,14 @@ def paivita_salkku_html():
             perustelu = pos.get("aloitus_perustelu", "Ei kirjattua perustelua.")
             html_content += f"""
                 <tr>
-                    <td><b>{pos['ticker']}</b><br><span class="badge">Vipu x{vipu}</span></td>
-                    <td>{pos['pvm']}</td>
-                    <td>{pos['panos']:.2f} €</td>
-                    <td>{pos['ostohinta']:.2f} €</td>
-                    <td><b>{nykyhinta:.2f} €</b></td>
-                    <td><span class="{tuotto_style}">{'+' if tuotto_eur >= 0 else ''}{tuotto_eur:.2f} € ({'+' if vivutettu_tuotto_pct >= 0 else ''}{vivutettu_tuotto_pct:.2f}%)</span></td>
-                    <td><span class="neg">SL: {pos['stop_loss']:.2f} €</span><br><span class="pos">TP: {pos['tavoite']:.2f} €</span></td>
-                    <td><div class="reason-box">{perustelu}</div></td>
+                    <td data-label="Kohde / Vipu"><b>{pos['ticker']}</b> <span class="badge">Vipu x{vipu}</span></td>
+                    <td data-label="Avauspvm" class="nowrap">{pos['pvm']}</td>
+                    <td data-label="Panos" class="nowrap">{pos['panos']:.2f} €</td>
+                    <td data-label="Sisääntulo" class="nowrap">{pos['ostohinta']:.2f} €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>{nykyhinta:.2f} €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="{tuotto_style}">{'+' if tuotto_eur >= 0 else ''}{tuotto_eur:.2f} € ({'+' if vivutettu_tuotto_pct >= 0 else ''}{vivutettu_tuotto_pct:.2f}%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: {pos['stop_loss']:.2f} €</span><br><span class="pos">TP: {pos['tavoite']:.2f} €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">{perustelu}</div></td>
                 </tr>
     """
 
@@ -492,17 +538,23 @@ def paivita_salkku_html():
         html_content += "<tr><td colspan='8' style='text-align: center; color: #777;'>Ei avoimia positioita tällä hetkellä.</td></tr>"
 
     html_content += """
-            </table>
+                    </tbody>
+                </table>
+            </div>
 
             <h2>Tehdyt treidit (Historia)</h2>
-            <table>
-                <tr>
-                    <th>Kohde / Vipu</th>
-                    <th>Avauspvm</th>
-                    <th>Alkupanos</th>
-                    <th>Toteutunut Tulos (€ / %)</th>
-                    <th>Ostoperustelu & Sulkusyy</th>
-                </tr>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kohde / Vipu</th>
+                            <th>Avauspvm</th>
+                            <th>Alkupanos</th>
+                            <th>Toteutunut Tulos (€ / %)</th>
+                            <th>Ostoperustelu & Sulkusyy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     """
 
     historiaa_löytyy = False
@@ -518,11 +570,11 @@ def paivita_salkku_html():
 
             html_content += f"""
                 <tr>
-                    <td><b>{pos['ticker']}</b><br><span class="badge">Vipu x{pos.get('vipu', 1)}</span></td>
-                    <td>{pos['pvm']}</td>
-                    <td>{pos['panos']:.2f} €</td>
-                    <td><span class="{tulos_style}">{'+' if tulos_eur >= 0 else ''}{tulos_eur:.2f} € ({'+' if tulos_pct >= 0 else ''}{tulos_pct:.2f}%)</span></td>
-                    <td>
+                    <td data-label="Kohde / Vipu"><b>{pos['ticker']}</b> <span class="badge">Vipu x{pos.get('vipu', 1)}</span></td>
+                    <td data-label="Avauspvm" class="nowrap">{pos['pvm']}</td>
+                    <td data-label="Alkupanos" class="nowrap">{pos['panos']:.2f} €</td>
+                    <td data-label="Tulos (€ / %)" class="nowrap"><span class="{tulos_style}">{'+' if tulos_eur >= 0 else ''}{tulos_eur:.2f} € ({'+' if tulos_pct >= 0 else ''}{tulos_pct:.2f}%)</span></td>
+                    <td data-label="Perustelu / Sulku">
                         <div class="reason-box"><b>Osto:</b> {aloitus_perustelu}</div>
                         <div class="reason-box" style="margin-top:4px; border-left: 3px solid #666;"><b>Sulkusyy:</b> {sulkusyy}</div>
                     </td>
@@ -533,7 +585,9 @@ def paivita_salkku_html():
         html_content += "<tr><td colspan='5' style='text-align: center; color: #777;'>Ei vielä suljettuja treidejä.</td></tr>"
 
     html_content += f"""
-            </table>
+                    </tbody>
+                </table>
+            </div>
             <div class="footer">Autonominen Viputreidausbotti &bull; Generoitu automaattisesti GitHub Actionsilla</div>
         </div>
     </body>
@@ -542,7 +596,7 @@ def paivita_salkku_html():
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
-    print("Botti 2: Salkun HTML-sivu päivitetty!")
+    print("Botti 2: Salkun HTML-sivu päivitetty selkeäksi tietokoneella ja mobiilissa!")
 
 # --- PÄÄOHJELMA ---
 def main():
