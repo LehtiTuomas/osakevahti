@@ -6,34 +6,76 @@
         <title>Botti 2 - Autonominen Viputreidaussalkku</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
-            .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-            h1 { color: #1a73e8; text-align: center; margin-bottom: 5px; }
-            .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 30px; }
-            .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }
-            .card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #1a73e8; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-            .card h3 { margin: 0 0 10px 0; color: #555; font-size: 0.95em; }
-            .card p { margin: 0; font-size: 1.5em; font-weight: bold; color: #222; }
-            h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
-            th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; font-size: 0.93em; vertical-align: top; }
-            th { background-color: #f8f9fa; color: #444; font-weight: 600; }
+            * { box-sizing: border-box; }
+            body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+            .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+            h1 { color: #1a73e8; text-align: center; margin-bottom: 5px; font-size: 1.8em; }
+            .subtitle { text-align: center; color: #666; font-size: 0.88em; margin-bottom: 20px; }
+            
+            .strategy-box { background: #eef5fe; border: 1px solid #d0e1fd; border-left: 5px solid #1a73e8; padding: 15px 18px; border-radius: 8px; margin-bottom: 25px; font-size: 0.88em; color: #2c3e50; line-height: 1.5; }
+            .strategy-box h4 { margin: 0 0 6px 0; color: #1a73e8; font-size: 1.05em; display: flex; align-items: center; gap: 6px; }
+            .strategy-box ul { margin: 6px 0 0 0; padding-left: 20px; }
+            .strategy-box li { margin-bottom: 4px; }
+
+            .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+            .card { background: #f8f9fa; padding: 18px; border-radius: 8px; border-left: 5px solid #1a73e8; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+            .card h3 { margin: 0 0 5px 0; color: #555; font-size: 0.85em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+            .card p { margin: 0; font-size: 1.4em; font-weight: bold; color: #222; }
+            
+            h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; font-size: 1.25em; }
+            
+            .table-responsive { width: 100%; overflow-x: auto; margin-bottom: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+            th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+            th { background-color: #f8f9fa; color: #444; font-weight: 600; white-space: nowrap; }
+            
+            .nowrap { white-space: nowrap; }
             .pos { color: #2e7d32; font-weight: bold; }
             .neg { color: #c62828; font-weight: bold; }
-            .badge { background: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
-            .reason-box { font-size: 0.88em; color: #555; background: #fafafa; padding: 6px 10px; border-radius: 4px; border: 1px solid #eee; margin-top: 4px; }
-            .footer { text-align: center; margin-top: 40px; font-size: 0.85em; color: #888; }
+            .badge { background: #e3f2fd; color: #1565c0; padding: 3px 6px; border-radius: 4px; font-size: 0.8em; font-weight: 600; display: inline-block; white-space: nowrap; }
+            .reason-box { font-size: 0.85em; color: #555; background: #fafafa; padding: 8px 10px; border-radius: 6px; border: 1px solid #eee; line-height: 1.35; }
+            .footer { text-align: center; margin-top: 35px; font-size: 0.8em; color: #888; }
+
+            /* MOBIILINÄKYMÄ (Puhelimen ruudulla korttinäkymä) */
+            @media screen and (max-width: 768px) {
+                body { padding: 10px; }
+                .container { padding: 15px; }
+                h1 { font-size: 1.4em; }
+                
+                table, thead, tbody, th, td, tr { display: block; }
+                thead { display: none; }
+                
+                tr { margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+                td { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.88em; }
+                td:last-child { border-bottom: none; flex-direction: column; align-items: flex-start; gap: 4px; padding-top: 10px; }
+                
+                td::before { content: attr(data-label); font-weight: 600; color: #666; margin-right: 15px; flex-shrink: 0; }
+                .nowrap { white-space: normal; }
+                .reason-box { width: 100%; margin-top: 4px; }
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>Botti 2: Autonominen Treidaussalkku (Mini Long)</h1>
-            <div class="subtitle">Alkupääoma: 3000.00 € | Päivitetty (Suomen aika): 21.10.2026 klo 12:57</div>
+            <div class="subtitle">Alkupääoma: 3000.00 € | Päivitetty: 21.10.2026 klo 13:12</div>
             
+            <div class="strategy-box">
+                <h4>📊 Osakevalintastrategia & Kriteerit</h4>
+                Salkkuun hyväksytään vain poikkeuksellisen vahvat swing-paikat Nordnet Mini Long -tuotteilla noudattaen näitä sääntöjä:
+                <ul>
+                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla vahvassa pitkän aikavälin nousutrendissä eli <b>yli 97% suhteessa 200 päivän liukuvaan keskiarvoon (SMA200)</b>.</li>
+                    <li><b>Dippi / Ylilyönti:</b> Mukaan haetaan tilapäistä korjausliikettä, eli päiväkohtainen lasku on <b>vähintään -2.0%</b> tai 14 päivän <b>RSI on ≤ 40</b>.</li>
+                    <li><b>Momentumin vakautuminen:</b> Viimeisen 4 tunnin kynttilöiden perusteella varmistetaan, ettei kurssi ole vapaassa pudotuksessa ostohetkellä.</li>
+                    <li><b>Fundamentti- ja uutissuodatin:</b> Groq-tekoäly lukee tuoreet uutiset ja tulosjulkaisutiedotteet. Dippi hylätään heti, jos taustalla on fundamentaalinen ongelma (kuten tulosvaroitus tai strateginen kriisi).</li>
+                    <li><b>2/3 Voittotavoite & Riskienhallinta:</b> Botti 2 valitsee viputason (1–10x) ja sijoituspanoksen (vähintään 100 €) siten, että kunkin kaupan Stop-Loss -maksimitappio on enintään 10% salkun kokonaisarvosta ja risk/reward-suhde tukee vähintään ~67% voittoprosenttia.</li>
+                </ul>
+            </div>
+
             <div class="summary-grid">
                 <div class="card">
                     <h3>Kokonaissaldo</h3>
-                    <p>2984.89 €</p>
+                    <p>2976.86 €</p>
                 </div>
                 <div class="card" style="border-left-color: #2e7d32;">
                     <h3>Käteiskassa</h3>
@@ -41,179 +83,191 @@
                 </div>
                 <div class="card" style="border-left-color: #ff9800;">
                     <h3>Kokonaistuotto</h3>
-                    <p class="neg">-15.11 € (-0.50%)</p>
+                    <p class="neg">-23.14 € (-0.77%)</p>
                 </div>
             </div>
 
             <h2>Käynnissä olevat treidit (Avoimet Mini Long -positiot)</h2>
-            <table>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kohde / Vipu</th>
+                            <th>Avauspvm</th>
+                            <th>Panos</th>
+                            <th>Sisääntulo</th>
+                            <th>Nykyhinta</th>
+                            <th>Tuotto (€ / %)</th>
+                            <th>Stop-Loss / Tavoite</th>
+                            <th>Ostoperustelu (Botti 1 & 2)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    
                 <tr>
-                    <th>Kohde / Vipu</th>
-                    <th>Avauspvm</th>
-                    <th>Panos</th>
-                    <th>Sisääntulo</th>
-                    <th>Nykyhinta</th>
-                    <th>Tuotto (€ / %)</th>
-                    <th>Stop-Loss / Tavoite</th>
-                    <th>Ostoperustelu (Botti 1 & 2)</th>
+                    <td data-label="Kohde / Vipu"><b>QCOM</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Panos" class="nowrap">243.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">173.53 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>175.71 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+3.05 € (+1.26%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 164.85 €</span><br><span class="pos">TP: 183.94 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>QCOM</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>243.00 €</td>
-                    <td>173.53 €</td>
-                    <td><b>175.71 €</b></td>
-                    <td><span class="pos">+3.05 € (+1.26%)</span></td>
-                    <td><span class="neg">SL: 164.85 €</span><br><span class="pos">TP: 183.94 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>FORTUM.HE</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Panos" class="nowrap">196.83 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">23.07 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>22.96 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-0.94 € (-0.48%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 21.92 €</span><br><span class="pos">TP: 24.45 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>FORTUM.HE</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>196.83 €</td>
-                    <td>23.07 €</td>
-                    <td><b>22.99 €</b></td>
-                    <td><span class="neg">-0.68 € (-0.35%)</span></td>
-                    <td><span class="neg">SL: 21.92 €</span><br><span class="pos">TP: 24.45 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>TYRES.HE</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Panos" class="nowrap">177.15 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">13.62 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>13.52 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-1.30 € (-0.73%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 12.94 €</span><br><span class="pos">TP: 14.44 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>TYRES.HE</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>177.15 €</td>
-                    <td>13.62 €</td>
-                    <td><b>13.53 €</b></td>
-                    <td><span class="neg">-1.17 € (-0.66%)</span></td>
-                    <td><span class="neg">SL: 12.94 €</span><br><span class="pos">TP: 14.44 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>HUH1V.HE</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Panos" class="nowrap">159.43 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">27.50 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>27.16 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-1.97 € (-1.24%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 26.12 €</span><br><span class="pos">TP: 29.15 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>HUH1V.HE</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>159.43 €</td>
-                    <td>27.50 €</td>
-                    <td><b>27.14 €</b></td>
-                    <td><span class="neg">-2.09 € (-1.31%)</span></td>
-                    <td><span class="neg">SL: 26.12 €</span><br><span class="pos">TP: 29.15 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>DTG.DE</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Panos" class="nowrap">143.49 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">41.77 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>40.91 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-2.95 € (-2.06%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 39.68 €</span><br><span class="pos">TP: 44.28 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>DTG.DE</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>143.49 €</td>
-                    <td>41.77 €</td>
-                    <td><b>40.98 €</b></td>
-                    <td><span class="neg">-2.71 € (-1.89%)</span></td>
-                    <td><span class="neg">SL: 39.68 €</span><br><span class="pos">TP: 44.28 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>INGA.AS</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Panos" class="nowrap">129.14 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">30.06 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>29.45 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-2.60 € (-2.01%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 28.56 €</span><br><span class="pos">TP: 31.86 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>INGA.AS</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>129.14 €</td>
-                    <td>30.06 €</td>
-                    <td><b>29.47 €</b></td>
-                    <td><span class="neg">-2.56 € (-1.98%)</span></td>
-                    <td><span class="neg">SL: 28.56 €</span><br><span class="pos">TP: 31.86 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>NESTE.HE</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-21</td>
+                    <td data-label="Panos" class="nowrap">500.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">31.00 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>30.86 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-9.03 € (-1.81%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 29.45 €</span><br><span class="pos">TP: 32.86 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>NESTE.HE</b><br><span class="badge">Vipu x4</span></td>
-                    <td>2026-10-21</td>
-                    <td>500.00 €</td>
-                    <td>31.00 €</td>
-                    <td><b>30.89 €</b></td>
-                    <td><span class="neg">-7.10 € (-1.42%)</span></td>
-                    <td><span class="neg">SL: 29.45 €</span><br><span class="pos">TP: 32.86 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>ASML.AS</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-21</td>
+                    <td data-label="Panos" class="nowrap">500.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">1474.20 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>1472.20 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-2.71 € (-0.54%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 1400.49 €</span><br><span class="pos">TP: 1562.65 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>ASML.AS</b><br><span class="badge">Vipu x4</span></td>
-                    <td>2026-10-21</td>
-                    <td>500.00 €</td>
-                    <td>1474.20 €</td>
-                    <td><b>1475.20 €</b></td>
-                    <td><span class="pos">+1.36 € (+0.27%)</span></td>
-                    <td><span class="neg">SL: 1400.49 €</span><br><span class="pos">TP: 1562.65 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>C</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-21</td>
+                    <td data-label="Panos" class="nowrap">500.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">122.51 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>122.51 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 116.38 €</span><br><span class="pos">TP: 129.86 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Ei kirjattua perustelua.</div></td>
                 </tr>
     
                 <tr>
-                    <td><b>C</b><br><span class="badge">Vipu x4</span></td>
-                    <td>2026-10-21</td>
-                    <td>500.00 €</td>
-                    <td>122.51 €</td>
-                    <td><b>122.51 €</b></td>
-                    <td><span class="pos">+0.00 € (+0.00%)</span></td>
-                    <td><span class="neg">SL: 116.38 €</span><br><span class="pos">TP: 129.86 €</span></td>
-                    <td><div class="reason-box">Ei kirjattua perustelua.</div></td>
+                    <td data-label="Kohde / Vipu"><b>SEB-A.ST</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-21</td>
+                    <td data-label="Panos" class="nowrap">400.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">216.70 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>216.50 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="neg">-1.48 € (-0.37%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 205.86 €</span><br><span class="pos">TP: 229.70 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">SEB-A:n vahva perusdata, alhainen RSI (33,7) osoittaa ylilyöntiä ja mahdollisuutta nousuun. Hinta on SMA200‑tuen yläpuolella, mikä tukee jatkokehitystä. Panos 400 € on kassasta mahdollinen ja riskin (≈20 €) alapuolella 10 % salkun riskirajan.</div></td>
                 </tr>
     
-                <tr>
-                    <td><b>SEB-A.ST</b><br><span class="badge">Vipu x4</span></td>
-                    <td>2026-10-21</td>
-                    <td>400.00 €</td>
-                    <td>216.70 €</td>
-                    <td><b>216.70 €</b></td>
-                    <td><span class="pos">+0.00 € (+0.00%)</span></td>
-                    <td><span class="neg">SL: 205.86 €</span><br><span class="pos">TP: 229.70 €</span></td>
-                    <td><div class="reason-box">SEB-A:n vahva perusdata, alhainen RSI (33,7) osoittaa ylilyöntiä ja mahdollisuutta nousuun. Hinta on SMA200‑tuen yläpuolella, mikä tukee jatkokehitystä. Panos 400 € on kassasta mahdollinen ja riskin (≈20 €) alapuolella 10 % salkun riskirajan.</div></td>
-                </tr>
-    
-            </table>
+                    </tbody>
+                </table>
+            </div>
 
             <h2>Tehdyt treidit (Historia)</h2>
-            <table>
-                <tr>
-                    <th>Kohde / Vipu</th>
-                    <th>Avauspvm</th>
-                    <th>Alkupanos</th>
-                    <th>Toteutunut Tulos (€ / %)</th>
-                    <th>Ostoperustelu & Sulkusyy</th>
-                </tr>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kohde / Vipu</th>
+                            <th>Avauspvm</th>
+                            <th>Alkupanos</th>
+                            <th>Toteutunut Tulos (€ / %)</th>
+                            <th>Ostoperustelu & Sulkusyy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     
                 <tr>
-                    <td><b>^OMXH25</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>300.00 €</td>
-                    <td><span class="pos">+0.00 € (+0.00%)</span></td>
-                    <td>
+                    <td data-label="Kohde / Vipu"><b>^OMXH25</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Alkupanos" class="nowrap">300.00 €</td>
+                    <td data-label="Tulos (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="Perustelu / Sulku">
                         <div class="reason-box"><b>Osto:</b> Ei kirjattua perustelua.</div>
                         <div class="reason-box" style="margin-top:4px; border-left: 3px solid #666;"><b>Sulkusyy:</b> Suljettu</div>
                     </td>
                 </tr>
     
                 <tr>
-                    <td><b>META</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>270.00 €</td>
-                    <td><span class="pos">+0.00 € (+0.00%)</span></td>
-                    <td>
+                    <td data-label="Kohde / Vipu"><b>META</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Alkupanos" class="nowrap">270.00 €</td>
+                    <td data-label="Tulos (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="Perustelu / Sulku">
                         <div class="reason-box"><b>Osto:</b> Ei kirjattua perustelua.</div>
                         <div class="reason-box" style="margin-top:4px; border-left: 3px solid #666;"><b>Sulkusyy:</b> Suljettu</div>
                     </td>
                 </tr>
     
                 <tr>
-                    <td><b>JNJ</b><br><span class="badge">Vipu x1</span></td>
-                    <td>2026-10-20</td>
-                    <td>218.70 €</td>
-                    <td><span class="pos">+0.00 € (+0.00%)</span></td>
-                    <td>
+                    <td data-label="Kohde / Vipu"><b>JNJ</b> <span class="badge">Vipu x1</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-20</td>
+                    <td data-label="Alkupanos" class="nowrap">218.70 €</td>
+                    <td data-label="Tulos (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="Perustelu / Sulku">
                         <div class="reason-box"><b>Osto:</b> Ei kirjattua perustelua.</div>
                         <div class="reason-box" style="margin-top:4px; border-left: 3px solid #666;"><b>Sulkusyy:</b> Suljettu</div>
                     </td>
                 </tr>
     
-            </table>
+                    </tbody>
+                </table>
+            </div>
             <div class="footer">Autonominen Viputreidausbotti &bull; Generoitu automaattisesti GitHub Actionsilla</div>
         </div>
     </body>
