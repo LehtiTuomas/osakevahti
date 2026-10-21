@@ -1,11 +1,11 @@
 {
-    "kassa": 1427.9771401554722,
+    "kassa": 1947.7519156478797,
     "alkupääoma": 3000.0,
     "positiot": [
         {
             "id": 1,
             "ticker": "^OMXH25",
-            "tila": "AVOIN",
+            "tila": "SULJETTU",
             "ostohinta": 6330.06005859375,
             "panos": 300.0,
             "stop_loss": 6013.56,
@@ -38,7 +38,7 @@
         {
             "id": 4,
             "ticker": "JNJ",
-            "tila": "AVOIN",
+            "tila": "SULJETTU",
             "ostohinta": 253.7899932861328,
             "panos": 218.7,
             "stop_loss": 241.1,
