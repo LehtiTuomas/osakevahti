@@ -1,5 +1,5 @@
 {
-    "kassa": 447.75191564787974,
+    "kassa": 47.75191564787974,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -142,6 +142,22 @@
             "tavoite": 129.86,
             "pvm": "2026-10-21",
             "osavoitto_kotiutettu": false,
+            "toteutunut_tulos_eur": 0.0,
+            "toteutunut_tulos_pct": 0.0,
+            "sulkusyy": ""
+        },
+        {
+            "id": 13,
+            "ticker": "SEB-A.ST",
+            "tila": "AVOIN",
+            "vipu": 4,
+            "ostohinta": 216.6999969482422,
+            "panos": 400.0,
+            "stop_loss": 205.86,
+            "tavoite": 229.7,
+            "pvm": "2026-10-21",
+            "osavoitto_kotiutettu": false,
+            "aloitus_perustelu": "SEB-A:n vahva perusdata, alhainen RSI (33,7) osoittaa ylilyöntiä ja mahdollisuutta nousuun. Hinta on SMA200‑tuen yläpuolella, mikä tukee jatkokehitystä. Panos 400 € on kassasta mahdollinen ja riskin (≈20 €) alapuolella 10 % salkun riskirajan.",
             "toteutunut_tulos_eur": 0.0,
             "toteutunut_tulos_pct": 0.0,
             "sulkusyy": ""
