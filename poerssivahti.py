@@ -72,12 +72,11 @@ def tallenna_historia(ticker_symbol):
         f.write(record + "\n")
 
 def hae_uutiset_ja_keskustelut(ticker_obj):
-    """Hakee tuoreimmat otsikot, uutiset ja tulosjulkaisutiedotteet Yahoo Financesta."""
     try:
         news_list = ticker_obj.news
         otsikot = []
         if news_list:
-            for item in news_list[:7]:  # Otetaan 7 tuoreinta uutista/tiedotetta
+            for item in news_list[:7]:
                 title = item.get("content", {}).get("title") or item.get("title", "")
                 publisher = item.get("content", {}).get("provider", {}).get("displayName", "")
                 if title:
@@ -85,7 +84,7 @@ def hae_uutiset_ja_keskustelut(ticker_obj):
                         otsikot.append(f"[{publisher}] {title}")
                     else:
                         otsikot.append(title)
-        return " | ".join(otsikot) if otsikot else "Ei tuoreita uutisia tai tulostiedotteita saatavilla, puhdas tekninen liike."
+        return " | ".join(otsikot) if otsikot else "Ei tuoreita uutisia saatavilla, tekninen liike."
     except Exception:
         return "Uutistietojen haku epäonnistui."
 
@@ -108,7 +107,6 @@ def botti_1_analysoi(ticker_symbol):
     current_rsi = df["RSI"].iloc[-1]
     sma200 = df["SMA200"].iloc[-1]
 
-    # TIUKKA SEULA: Vaaditaan selkeä dippi (-2%) tai ylilyönti (RSI <= 40) ja pitkä nousutrendi
     is_dipping = day_change_pct <= -2.0
     is_rsi_low = current_rsi <= 40
     is_in_long_term_uptrend = current_price > (sma200 * 0.97)
@@ -131,13 +129,11 @@ def botti_1_analysoi(ticker_symbol):
     client = Groq(api_key=GROQ_API_KEY)
     prompt = f"""
 Olet kriittinen osake- ja fundamenttianalyytikko.
-Tehtäväsi on tarkistaa, onko osakkeessa menossa terveellinen dippi nousutrendissä VAI onko dippi seurausta fundamentaalisesta ongelmasta (kuten huono tulosjulkistus, tulosvaroitus, strateginen kriisi tai skandaali).
+Tarkista, onko osakkeessa menossa terveellinen dippi nousutrendissä VAI fundamentaalinen ongelma.
 
 OSAKE: {ticker_symbol}
 - Hinta: {current_price:.2f} | Päivämuutos: {day_change_pct:.2f}% | RSI: {current_rsi:.1f}
-- TUOREET UUTISET, TULOSJULKAISUT JA SNOOPPATUT OTSIKOT: "{uutis_teksti}"
-
-SÄÄNTÖ: Hylkää osake heti, jos uutisissa tai tiedotteissa näkyy vakava fundamentaalinen riski (esim. tulosvaroitus tai heikentynyt ohjeistus). Hyväksy vain jos dippi vaikuttaa tilapäiseltä reaktiolta tai tekniseltä korjausliikkeeltä.
+- UUTISET / TULOSJULKAISUT: "{uutis_teksti}"
 
 Vastaa TÄSMÄLLEEN muodossa:
 PÄÄTÖS: [HYVÄKSYTTY tai HYLÄTTY]
@@ -205,11 +201,9 @@ Olet ammattimainen ja kurinalainen viputuotteiden (Nordnet Mini Long) swing-trei
 STRATEGINEN TAVOITE:
 - Pyrit siihen, että vähintään 2/3 (n. 67 %) avaamistasi treideistä on voittavia.
 - Maksimoit salkun kokonaistuoton optimoimalla risk/reward-suhteen jokaiselle kaupalle.
-- Et ota turhia riskejä, mutta vipuat (1-10x) rohkeasti silloin, kun osakkeen nousutrendi ja dippi ovat poikkeuksellisen selkeitä.
 
 SALKUN TILA & RAJOITUKSET:
-- Salkun kokonaisarvo: {kokonaissaldo:.2f} €
-- Käteiskassa: {salkku['kassa']:.2f} €
+- Salkun kokonaisarvo: {kokonaissaldo:.2f} € | Käteiskassa: {salkku['kassa']:.2f} €
 - Maksimiriski (Stop-Loss -tappio): enintään {max_risk_eur:.2f} € (10% salkusta)
 - Sijoitettava panos: vähintään 100.00 € ja enintään {max_mahdollinen_panos:.2f} €
 
@@ -222,7 +216,7 @@ Tee sijoituspäätös JSON-muodossa ilman markdown-tageja:
   "sijoita": true,
   "panos": 500.0,
   "vipu": 4,
-  "perustelu": "Lyhyt perustelu panokselle, vivulle ja risk/reward-suhteelle",
+  "perustelu": "Ytimekäs analyysi miksi osake ostettiin ja miksi valittiin tämä panos/vipu",
   "sisääntulohinta": {current_price},
   "stop_loss": {round(current_price * 0.95, 2)},
   "ensimmainen_tukitaso_tavoite": {round(current_price * 1.06, 2)}
@@ -255,6 +249,7 @@ Jos paikka ei täytä 2/3-voittotavoitteen kriteereitä, aseta "sijoita": false.
                 "tavoite": data["ensimmainen_tukitaso_tavoite"],
                 "pvm": get_finland_time().strftime("%Y-%m-%d"),
                 "osavoitto_kotiutettu": False,
+                "aloitus_perustelu": data.get("perustelu", "Teknisen ja fundamenttianalyysin perusteella valittu kohde."),
                 "toteutunut_tulos_eur": 0.0,
                 "toteutunut_tulos_pct": 0.0,
                 "sulkusyy": ""
@@ -296,7 +291,7 @@ def paivita_avoimet_treidit():
 
         vipu = pos.get("vipu", 1)
 
-        # 1. Stop-Loss tarkistus
+        # 1. Stop-Loss tarkistus (Lasketaan TAPPIO oikein)
         if paivan_alin <= pos["stop_loss"]:
             pos["tila"] = "SULJETTU"
             hinnan_muutos_pct = (pos["stop_loss"] - pos["ostohinta"]) / pos["ostohinta"]
@@ -305,10 +300,10 @@ def paivita_avoimet_treidit():
             panos_osa = pos["panos"] * jella_oleva_osuus
             loppuarvo = max(0, panos_osa * (1 + vivutettu_tulos_pct))
             
-            tulos_eur = loppuarvo - panos_osa
+            tulos_eur = loppuarvo - panos_osa  # Tappiolla tämä on negatiivinen eurosumma
             pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
             pos["toteutunut_tulos_pct"] = vivutettu_tulos_pct * 100
-            pos["sulkusyy"] = "Stop-Loss"
+            pos["sulkusyy"] = f"Stop-Loss laukesi (Päivän alin {paivan_alin:.2f} € alitti tason {pos['stop_loss']:.2f} €)"
 
             salkku["kassa"] += loppuarvo
             muutos_tehty = True
@@ -328,7 +323,7 @@ def paivita_avoimet_treidit():
             
             tulos_eur = myyty_arvo - myyty_osuus_panoksesta
             pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
-            pos["stop_loss"] = pos["ostohinta"] # Nostetaan SL sisäänhintaan
+            pos["stop_loss"] = pos["ostohinta"]
 
             salkku["kassa"] += myyty_arvo
             muutos_tehty = True
@@ -338,7 +333,7 @@ def paivita_avoimet_treidit():
             )
             continue
 
-        # 3. TEKOÄLYN SULKUPÄÄTÖS (Vain jos erittäin painava fundamentaalisyy tai uutisriski)
+        # 3. TEKOÄLYN SULKUPÄÄTÖS (Uutisriskit tai käänne)
         try:
             uutis_teksti = hae_uutiset_ja_keskustelut(ticker)
             hinnan_muutos_nyt = ((current_price - pos["ostohinta"]) / pos["ostohinta"]) * 100 * vipu
@@ -348,15 +343,15 @@ Olet kurinalainen swing-treidaaja. Hallinnoit avointa Mini Long -positiota kohte
 - Sisääntulohinta: {pos['ostohinta']:.2f} | Nykyhinta: {current_price:.2f} | Vipu: x{vipu}
 - Vivutettu tuotto/tappio: {hinnan_muutos_nyt:.2f}%
 - Osavoitto kotiutettu: {pos.get('osavoitto_kotiutettu')}
-- Tuoreet uutiset: "{uutis_teksti}"
+- Uutiset: "{uutis_teksti}"
 
 SÄÄNTÖ: Oletusarvoisesti anna treidin juosta Stop-Lossiin tai Take Profitiin asti! 
-Sulje positio ENNENAIKAISESTI VAIN, JOS uutisissa näkyy VAKAVA UUTISRISKI tai FUNDAMENTAALINEN KÄÄNNE (kuten heikko tulosjulkistus tai tulosvaroitus), joka tuhoaa alkuperäisen teesin. Älä sulje tavallisen kurssiheilahtelun vuoksi.
+Sulje positio ENNENAIKAISESTI VAIN, JOS uutisissa näkyy VAKAVA UUTISRISKI tai FUNDAMENTAALINEN KÄÄNNE.
 
 Vastaa JSON-muodossa ilman markdown-tageja:
 {{
   "sulje_positio": false,
-  "perustelu": "Pidetään avoinna normaalin heilunnan puitteissa."
+  "perustelu": "Lyhyt syy myynnille tai pitämiselle"
 }}
 """
             ai_response = client.chat.completions.create(
@@ -378,7 +373,7 @@ Vastaa JSON-muodossa ilman markdown-tageja:
                 tulos_eur = loppuarvo - panos_osa
                 pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
                 pos["toteutunut_tulos_pct"] = vivutettu_tulos_pct * 100
-                pos["sulkusyy"] = "Tekoäly (Uutisriski)"
+                pos["sulkusyy"] = f"Tekoälyn ennenaikainen myynti: {ai_decision.get('perustelu')}"
 
                 salkku["kassa"] += loppuarvo
                 muutos_tehty = True
@@ -410,7 +405,7 @@ def paivita_salkku_html():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }}
-            .container {{ max-width: 1050px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
+            .container {{ max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
             h1 {{ color: #1a73e8; text-align: center; margin-bottom: 5px; }}
             .subtitle {{ text-align: center; color: #666; font-size: 0.9em; margin-bottom: 30px; }}
             .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }}
@@ -419,11 +414,12 @@ def paivita_salkku_html():
             .card p {{ margin: 0; font-size: 1.5em; font-weight: bold; color: #222; }}
             h2 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }}
-            th, td {{ padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; font-size: 0.95em; }}
+            th, td {{ padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; font-size: 0.93em; vertical-align: top; }}
             th {{ background-color: #f8f9fa; color: #444; font-weight: 600; }}
             .pos {{ color: #2e7d32; font-weight: bold; }}
             .neg {{ color: #c62828; font-weight: bold; }}
             .badge {{ background: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }}
+            .reason-box {{ font-size: 0.88em; color: #555; background: #fafafa; padding: 6px 10px; border-radius: 4px; border: 1px solid #eee; margin-top: 4px; }}
             .footer {{ text-align: center; margin-top: 40px; font-size: 0.85em; color: #888; }}
         </style>
     </head>
@@ -457,7 +453,7 @@ def paivita_salkku_html():
                     <th>Nykyhinta</th>
                     <th>Tuotto (€ / %)</th>
                     <th>Stop-Loss / Tavoite</th>
-                    <th>Tila</th>
+                    <th>Ostoperustelu (Botti 1 & 2)</th>
                 </tr>
     """
 
@@ -478,7 +474,7 @@ def paivita_salkku_html():
             tuotto_eur = (pos["panos"] * jella_oleva_osuus) * (hinnan_muutos_pct * vipu)
             tuotto_style = "pos" if tuotto_eur >= 0 else "neg"
 
-            tila_teksti = "Aktiivinen (Osavoitto otettu)" if pos.get("osavoitto_kotiutettu") else "Aktiivinen"
+            perustelu = pos.get("aloitus_perustelu", "Ei kirjattua perustelua.")
             html_content += f"""
                 <tr>
                     <td><b>{pos['ticker']}</b><br><span class="badge">Vipu x{vipu}</span></td>
@@ -488,7 +484,7 @@ def paivita_salkku_html():
                     <td><b>{nykyhinta:.2f} €</b></td>
                     <td><span class="{tuotto_style}">{'+' if tuotto_eur >= 0 else ''}{tuotto_eur:.2f} € ({'+' if vivutettu_tuotto_pct >= 0 else ''}{vivutettu_tuotto_pct:.2f}%)</span></td>
                     <td><span class="neg">SL: {pos['stop_loss']:.2f} €</span><br><span class="pos">TP: {pos['tavoite']:.2f} €</span></td>
-                    <td><span class="badge" style="background: #e8f5e9; color: #2e7d32;">{tila_teksti}</span></td>
+                    <td><div class="reason-box">{perustelu}</div></td>
                 </tr>
     """
 
@@ -505,7 +501,7 @@ def paivita_salkku_html():
                     <th>Avauspvm</th>
                     <th>Alkupanos</th>
                     <th>Toteutunut Tulos (€ / %)</th>
-                    <th>Sulkusyy</th>
+                    <th>Ostoperustelu & Sulkusyy</th>
                 </tr>
     """
 
@@ -516,7 +512,9 @@ def paivita_salkku_html():
             tulos_eur = pos.get("toteutunut_tulos_eur", 0.0)
             tulos_pct = pos.get("toteutunut_tulos_pct", 0.0)
             tulos_style = "pos" if tulos_eur >= 0 else "neg"
+            
             sulkusyy = pos.get("sulkusyy", "Suljettu")
+            aloitus_perustelu = pos.get("aloitus_perustelu", "Ei kirjattua perustelua.")
 
             html_content += f"""
                 <tr>
@@ -524,7 +522,10 @@ def paivita_salkku_html():
                     <td>{pos['pvm']}</td>
                     <td>{pos['panos']:.2f} €</td>
                     <td><span class="{tulos_style}">{'+' if tulos_eur >= 0 else ''}{tulos_eur:.2f} € ({'+' if tulos_pct >= 0 else ''}{tulos_pct:.2f}%)</span></td>
-                    <td><span style="color: #666;">{sulkusyy}</span></td>
+                    <td>
+                        <div class="reason-box"><b>Osto:</b> {aloitus_perustelu}</div>
+                        <div class="reason-box" style="margin-top:4px; border-left: 3px solid #666;"><b>Sulkusyy:</b> {sulkusyy}</div>
+                    </td>
                 </tr>
     """
 
