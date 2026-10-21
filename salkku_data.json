@@ -1,5 +1,5 @@
 {
-    "kassa": 1162.2599999999998,
+    "kassa": 1427.9771401554722,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -16,7 +16,7 @@
         {
             "id": 2,
             "ticker": "META",
-            "tila": "AVOIN",
+            "tila": "SULJETTU",
             "ostohinta": 705.4400024414062,
             "panos": 270.0,
             "stop_loss": 670.17,
