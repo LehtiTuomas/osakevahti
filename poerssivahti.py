@@ -198,9 +198,15 @@ def botti_2_tee_sijoituspaatos(ticker_symbol, current_price, sma200, botti_1_ana
     prompt = f"""
 Olet ammattimainen ja kurinalainen viputuotteiden (Nordnet Mini Long) swing-treidausbotti. 
 
+EHDOTON RISK/REWARD -SÄÄNTÖ (ASETETAAN AINA TÄSMÄLLEEN):
+- Risk/Reward-suhteen (R:R) TÄYTYY olla VÄHINTÄÄN 1:2, MIELELLÄÄN 1:3 joka ikisessä treidissä!
+- Jos Stop-Loss on esim. X % alle sisäänhinnan, ensimmäisen tavoitteen (Take Profit) TÄYTYY olla VÄHINTÄÄN 2X–3X kauempana noususuunnassa.
+- Esimerkki: Jos Stop-Loss asetetaan 3 % alle nykyhinnan, Take Profitin TÄYTYY olla VÄHINTÄÄN 6 % – 9 % yli nykyhinnan.
+- Jos teknisessä kuvassa ei ole tilaa 1:2 tai 1:3 R:R-suhteelle lähimpään vastustasoon nähden, ASETA "sijoita": false!
+
 STRATEGINEN TAVOITE:
-- Pyrit siihen, että vähintään 2/3 (n. 67 %) avaamistasi treideistä on voittavia.
-- Maksimoit salkun kokonaistuoton optimoimalla risk/reward-suhteen jokaiselle kaupalle.
+- Pyrit pitkällä aikavälillä siihen, että noin 2/3 (67 %) avaamistasi treideistä saavuttaa tavoitteensa.
+- Maksimoit salkun kokonaistuoton yhdistämällä korkean voittoprosentin ja kurinalaisen 1:2 / 1:3 R:R-suhteen.
 
 SALKUN TILA & RAJOITUKSET:
 - Salkun kokonaisarvo: {kokonaissaldo:.2f} € | Käteiskassa: {salkku['kassa']:.2f} €
@@ -209,19 +215,18 @@ SALKUN TILA & RAJOITUKSET:
 
 ANALYYSITIEDOT:
 - Botti 1 fundamenttianalyysi: "{botti_1_analyysi}"
-- Kohde: {ticker_symbol} | Hinta: {current_price:.2f} | SMA200-tuki: {sma200:.2f}
+- Kohde: {ticker_symbol} | Nykyhinta: {current_price:.2f} | SMA200-tuki: {sma200:.2f}
 
 Tee sijoituspäätös JSON-muodossa ilman markdown-tageja:
 {{
   "sijoita": true,
   "panos": 500.0,
   "vipu": 4,
-  "perustelu": "Ytimekäs analyysi miksi osake ostettiin ja miksi valittiin tämä panos/vipu",
+  "perustelu": "Kuvaa tässä tarkka Risk/Reward-suhde (esim. R:R 1:2.5) ja mihin teknisiin tasoihin SL/TP perustuvat",
   "sisääntulohinta": {current_price},
-  "stop_loss": {round(current_price * 0.95, 2)},
-  "ensimmainen_tukitaso_tavoite": {round(current_price * 1.06, 2)}
+  "stop_loss": {round(current_price * 0.96, 2)},
+  "ensimmainen_tukitaso_tavoite": {round(current_price * 1.09, 2)}
 }}
-Jos paikka ei täytä 2/3-voittotavoitteen kriteereitä, aseta "sijoita": false.
 """
 
     try:
@@ -234,6 +239,18 @@ Jos paikka ei täytä 2/3-voittotavoitteen kriteereitä, aseta "sijoita": false.
         data = json.loads(res_text)
 
         if data.get("sijoita"):
+            # Varmistetaan vielä kooditasolla, että Risk/Reward on vähintään 1:1.95 ennen hyväksyntää
+            sisään = float(data["sisääntulohinta"])
+            sl = float(data["stop_loss"])
+            tp = float(data["ensimmainen_tukitaso_tavoite"])
+
+            riski = sisään - sl
+            palkinto = tp - sisään
+
+            if riski <= 0 or (palkinto / riski) < 1.95:
+                print(f"[{ticker_symbol}] Tekoälyn ehdottama R:R ei täyttänyt vähintään 1:2 ehtoa (Laskettu R:R = 1:{(palkinto/riski) if riski>0 else 0:.2f}). Hylätään kauppa.")
+                return
+
             panos = float(data.get("panos", 100.0))
             panos = max(100.0, min(panos, salkku["kassa"]))
             vipu = max(1, min(10, int(data.get("vipu", 3))))
@@ -243,10 +260,10 @@ Jos paikka ei täytä 2/3-voittotavoitteen kriteereitä, aseta "sijoita": false.
                 "ticker": ticker_symbol,
                 "tila": "AVOIN",
                 "vipu": vipu,
-                "ostohinta": data["sisääntulohinta"],
+                "ostohinta": sisään,
                 "panos": panos,
-                "stop_loss": data["stop_loss"],
-                "tavoite": data["ensimmainen_tukitaso_tavoite"],
+                "stop_loss": sl,
+                "tavoite": tp,
                 "pvm": get_finland_time().strftime("%Y-%m-%d"),
                 "osavoitto_kotiutettu": False,
                 "aloitus_perustelu": data.get("perustelu", "Teknisen ja fundamenttianalyysin perusteella valittu kohde."),
@@ -262,9 +279,10 @@ Jos paikka ei täytä 2/3-voittotavoitteen kriteereitä, aseta "sijoita": false.
                 f"🤖 <b>BOTTI 2: UUSI MINI LONG AVATTU (Vipu x{vipu})</b> 🤖\n"
                 f"- Kohde: {ticker_symbol}\n"
                 f"- Panos: {panos:.2f} € | Vipu: x{vipu}\n"
+                f"- R:R Suhde: 1:{(palkinto/riski):.2f}\n"
                 f"- Perustelu: {data['perustelu']}\n"
-                f"- Stop-Loss: {data['stop_loss']:.2f}\n"
-                f"- Take Profit: {data['ensimmainen_tukitaso_tavoite']:.2f}"
+                f"- Stop-Loss: {sl:.2f} €\n"
+                f"- Take Profit: {tp:.2f} €"
             )
             send_telegram_message(viesti)
     except Exception as e:
@@ -462,11 +480,11 @@ def paivita_salkku_html():
                 <h4>📊 Osakevalintastrategia & Kriteerit</h4>
                 Salkkuun hyväksytään vain poikkeuksellisen vahvat swing-paikat Nordnet Mini Long -tuotteilla noudattaen näitä sääntöjä:
                 <ul>
-                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla vahvassa pitkän aikavälin nousutrendissä eli <b>yli 97% suhteessa 200 päivän liukuvaan keskiarvoon (SMA200)</b>.</li>
-                    <li><b>Dippi / Ylilyönti:</b> Mukaan haetaan tilapäistä korjausliikettä, eli päiväkohtainen lasku on <b>vähintään -2.0%</b> tai 14 päivän <b>RSI on ≤ 40</b>.</li>
-                    <li><b>Momentumin vakautuminen:</b> Viimeisen 4 tunnin kynttilöiden perusteella varmistetaan, ettei kurssi ole vapaassa pudotuksessa ostohetkellä.</li>
-                    <li><b>Fundamentti- ja uutissuodatin:</b> Groq-tekoäly lukee tuoreet uutiset ja tulosjulkaisutiedotteet. Dippi hylätään heti, jos taustalla on fundamentaalinen ongelma (kuten tulosvaroitus tai strateginen kriisi).</li>
-                    <li><b>2/3 Voittotavoite & Riskienhallinta:</b> Botti 2 valitsee viputason (1–10x) ja sijoituspanoksen (vähintään 100 €) siten, että kunkin kaupan Stop-Loss -maksimitappio on enintään 10% salkun kokonaisarvosta ja risk/reward-suhde tukee vähintään ~67% voittoprosenttia.</li>
+                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla pitkän aikavälin nousutrendissä (<b>hinta > 97% SMA200</b>).</li>
+                    <li><b>Dippi / Ylilyönti:</b> Haetaan tilapäistä korjausliikettä (päivälasku <b>≤ -2.0%</b> tai 14p <b>RSI ≤ 40</b>).</li>
+                    <li><b>Fundamenttisuoja:</b> Groq-tekoäly lukee uutiset ja tulostiedotteet. Dippi hylätään heti, jos taustalla on fundamentaaliaukko tai strateginen kriisi.</li>
+                    <li><b>EHDOTON RISK/REWARD (1:2 - 1:3):</b> Jokaisella kaupalla on pakollinen vähintään 1:2 (mieluiten 1:3) Risk/Reward-suhde. Jos teknisessä kuvassa ei ole tilaa 2X–3X nousulle suhteessa Stop-Lossiin, treidiä ei avata.</li>
+                    <li><b>2/3 Voittotavoite & Sulku:</b> Pyritään pitkällä aikavälillä ~67% voittoprosenttiin. Kotiuttaa automaattisesti 50% voitosta tavoitteessa ja nostaa Stop-Lossin sisäänhintaan (Break-Even).</li>
                 </ul>
             </div>
 
