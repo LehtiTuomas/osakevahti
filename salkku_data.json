@@ -1,5 +1,22 @@
 {
-    "kassa": 3000.00,
-    "alkupääoma": 3000.00,
-    "positiot": []
+    "kassa": 2500.0,
+    "alkupääoma": 3000.0,
+    "positiot": [
+        {
+            "id": 1,
+            "ticker": "DE",
+            "tila": "AVOIN",
+            "vipu": 4,
+            "ostohinta": 636.5399780273438,
+            "panos": 500.0,
+            "stop_loss": 604.71,
+            "tavoite": 674.73,
+            "pvm": "2026-10-22",
+            "osavoitto_kotiutettu": false,
+            "aloitus_perustelu": "DE:n vahvat perusluvut, alhainen RSI (39,8) ja hinta yli SMA200-tuen (596,68) viittaavat terveelliseen korjausdipiin, mikä antaa yli 67 % todennäköisyyden voittoon. Panos 500 € (≈17 % salkusta) ja vipu 4 tasapainottavat riskin (stop‑loss 5 % = 604,71 €) ja potentiaalisen tuoton (risk‑reward ≈1:1,1).",
+            "toteutunut_tulos_eur": 0.0,
+            "toteutunut_tulos_pct": 0.0,
+            "sulkusyy": ""
+        }
+    ]
 }
