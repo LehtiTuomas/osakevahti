@@ -58,32 +58,32 @@
     <body>
         <div class="container">
             <h1>Botti 2: Autonominen Treidaussalkku (Mini Long)</h1>
-            <div class="subtitle">Alkupääoma: 3000.00 € | Päivitetty: 22.10.2026 klo 04:39</div>
+            <div class="subtitle">Alkupääoma: 3000.00 € | Päivitetty: 23.10.2026 klo 04:41</div>
             
             <div class="strategy-box">
                 <h4>📊 Osakevalintastrategia & Kriteerit</h4>
                 Salkkuun hyväksytään vain poikkeuksellisen vahvat swing-paikat Nordnet Mini Long -tuotteilla noudattaen näitä sääntöjä:
                 <ul>
-                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla vahvassa pitkän aikavälin nousutrendissä eli <b>yli 97% suhteessa 200 päivän liukuvaan keskiarvoon (SMA200)</b>.</li>
-                    <li><b>Dippi / Ylilyönti:</b> Mukaan haetaan tilapäistä korjausliikettä, eli päiväkohtainen lasku on <b>vähintään -2.0%</b> tai 14 päivän <b>RSI on ≤ 40</b>.</li>
-                    <li><b>Momentumin vakautuminen:</b> Viimeisen 4 tunnin kynttilöiden perusteella varmistetaan, ettei kurssi ole vapaassa pudotuksessa ostohetkellä.</li>
-                    <li><b>Fundamentti- ja uutissuodatin:</b> Groq-tekoäly lukee tuoreet uutiset ja tulosjulkaisutiedotteet. Dippi hylätään heti, jos taustalla on fundamentaalinen ongelma (kuten tulosvaroitus tai strateginen kriisi).</li>
-                    <li><b>2/3 Voittotavoite & Riskienhallinta:</b> Botti 2 valitsee viputason (1–10x) ja sijoituspanoksen (vähintään 100 €) siten, että kunkin kaupan Stop-Loss -maksimitappio on enintään 10% salkun kokonaisarvosta ja risk/reward-suhde tukee vähintään ~67% voittoprosenttia.</li>
+                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla pitkän aikavälin nousutrendissä (<b>hinta > 97% SMA200</b>).</li>
+                    <li><b>Dippi / Ylilyönti:</b> Haetaan tilapäistä korjausliikettä (päivälasku <b>≤ -2.0%</b> tai 14p <b>RSI ≤ 40</b>).</li>
+                    <li><b>Fundamenttisuoja:</b> Groq-tekoäly lukee uutiset ja tulostiedotteet. Dippi hylätään heti, jos taustalla on fundamentaaliaukko tai strateginen kriisi.</li>
+                    <li><b>EHDOTON RISK/REWARD (1:2 - 1:3):</b> Jokaisella kaupalla on pakollinen vähintään 1:2 (mieluiten 1:3) Risk/Reward-suhde. Jos teknisessä kuvassa ei ole tilaa 2X–3X nousulle suhteessa Stop-Lossiin, treidiä ei avata.</li>
+                    <li><b>2/3 Voittotavoite & Sulku:</b> Pyritään pitkällä aikavälillä ~67% voittoprosenttiin. Kotiuttaa automaattisesti 50% voitosta tavoitteessa ja nostaa Stop-Lossin sisäänhintaan (Break-Even).</li>
                 </ul>
             </div>
 
             <div class="summary-grid">
                 <div class="card">
                     <h3>Kokonaissaldo</h3>
-                    <p>3000.00 €</p>
+                    <p>3022.25 €</p>
                 </div>
                 <div class="card" style="border-left-color: #2e7d32;">
                     <h3>Käteiskassa</h3>
-                    <p>2500.00 €</p>
+                    <p>1000.00 €</p>
                 </div>
                 <div class="card" style="border-left-color: #ff9800;">
                     <h3>Kokonaistuotto</h3>
-                    <p class="pos">+0.00 € (+0.00%)</p>
+                    <p class="pos">+22.25 € (+0.74%)</p>
                 </div>
             </div>
 
@@ -109,10 +109,43 @@
                     <td data-label="Avauspvm" class="nowrap">2026-10-22</td>
                     <td data-label="Panos" class="nowrap">500.00 €</td>
                     <td data-label="Sisääntulo" class="nowrap">636.54 €</td>
-                    <td data-label="Nykyhinta" class="nowrap"><b>636.54 €</b></td>
-                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>643.62 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+22.25 € (+4.45%)</span></td>
                     <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 604.71 €</span><br><span class="pos">TP: 674.73 €</span></td>
                     <td data-label="Perustelu"><div class="reason-box">DE:n vahvat perusluvut, alhainen RSI (39,8) ja hinta yli SMA200-tuen (596,68) viittaavat terveelliseen korjausdipiin, mikä antaa yli 67 % todennäköisyyden voittoon. Panos 500 € (≈17 % salkusta) ja vipu 4 tasapainottavat riskin (stop‑loss 5 % = 604,71 €) ja potentiaalisen tuoton (risk‑reward ≈1:1,1).</div></td>
+                </tr>
+    
+                <tr>
+                    <td data-label="Kohde / Vipu"><b>META</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-23</td>
+                    <td data-label="Panos" class="nowrap">500.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">648.85 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>648.85 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 622.90 €</span><br><span class="pos">TP: 707.25 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Risk/Reward-suhde on noin 1:2.25 (stop‑loss 4 % alapuolelle sisäänhintaa ja ensimmäinen TP 9 % yläpuolelle). Stop‑loss (622.9) on asetettu 4 % alaspäin (≈25.95 € riski) ja on lähellä SMA200‑tukitasoa (631.68), mikä antaa selkeän teknisen tukipisteen. TP (707.25) on 9 % yli sisäänhinnan, mikä täyttää 2‑3‑kerran riskin vaatimuksen ja on riittävän kaukana seuraavasta vastustasosta, jotta 1:2‑ tai 1:3‑R:R‑suhde toteutuu.</div></td>
+                </tr>
+    
+                <tr>
+                    <td data-label="Kohde / Vipu"><b>SMCI</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-23</td>
+                    <td data-label="Panos" class="nowrap">500.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">33.72 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>33.72 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 32.37 €</span><br><span class="pos">TP: 36.75 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Stop-Loss asetetaan 32.37, mikä on 1.35 € (≈4.0 %) alapuolella sisääntulohintaa 33.720001220703125. Ensimmäinen Take Profit -tavoite on 36.75, eli 3.03 € (≈9.0 %) yläpuolella. Tämä antaa Risk/Reward-suhteen 1:2.24, mikä täyttää vaaditun vähintään 1:2‑suhteen. SMA200‑tuki 32.53 vahvistaa alarajan, ja tekninen kuvaaja näyttää tilaa TP‑tasolle ilman merkittävää vastustasoa lähellä, joten sijoitus on perusteltu.</div></td>
+                </tr>
+    
+                <tr>
+                    <td data-label="Kohde / Vipu"><b>C</b> <span class="badge">Vipu x4</span></td>
+                    <td data-label="Avauspvm" class="nowrap">2026-10-23</td>
+                    <td data-label="Panos" class="nowrap">500.00 €</td>
+                    <td data-label="Sisääntulo" class="nowrap">122.51 €</td>
+                    <td data-label="Nykyhinta" class="nowrap"><b>122.51 €</b></td>
+                    <td data-label="Tuotto (€ / %)" class="nowrap"><span class="pos">+0.00 € (+0.00%)</span></td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: 117.61 €</span><br><span class="pos">TP: 133.54 €</span></td>
+                    <td data-label="Perustelu"><div class="reason-box">Risk/Reward-suhde on R:R 1:2.75. Stop‑Loss asetetaan 117.61 €:iin, mikä on noin 4.0 % alapuolelle sisääntulohinnasta (122.51 €). Tämä taso on selvästi SMA200‑tukitasosta (125.72 €) alapuolella, eikä lähellä lähintä merkittävää vastustasoa, joten riski on hallittavissa. Take‑Profit asetetaan 133.54 €:iin, mikä on noin 11.0 % yläpuolelle sisääntulohintaa, tarjoten 2.75‑kertaisen mahdollisen voiton suhteessa mahdolliseen tappioon. Tämä täyttää vaaditun vähintään 1:2 – 1:3 R:R‑suhteen.</div></td>
                 </tr>
     
                     </tbody>

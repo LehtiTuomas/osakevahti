@@ -1,5 +1,5 @@
 {
-    "kassa": 2500.0,
+    "kassa": 1000.0,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -14,6 +14,54 @@
             "pvm": "2026-10-22",
             "osavoitto_kotiutettu": false,
             "aloitus_perustelu": "DE:n vahvat perusluvut, alhainen RSI (39,8) ja hinta yli SMA200-tuen (596,68) viittaavat terveelliseen korjausdipiin, mikä antaa yli 67 % todennäköisyyden voittoon. Panos 500 € (≈17 % salkusta) ja vipu 4 tasapainottavat riskin (stop‑loss 5 % = 604,71 €) ja potentiaalisen tuoton (risk‑reward ≈1:1,1).",
+            "toteutunut_tulos_eur": 0.0,
+            "toteutunut_tulos_pct": 0.0,
+            "sulkusyy": ""
+        },
+        {
+            "id": 2,
+            "ticker": "META",
+            "tila": "AVOIN",
+            "vipu": 4,
+            "ostohinta": 648.8499755859375,
+            "panos": 500.0,
+            "stop_loss": 622.9,
+            "tavoite": 707.25,
+            "pvm": "2026-10-23",
+            "osavoitto_kotiutettu": false,
+            "aloitus_perustelu": "Risk/Reward-suhde on noin 1:2.25 (stop‑loss 4 % alapuolelle sisäänhintaa ja ensimmäinen TP 9 % yläpuolelle). Stop‑loss (622.9) on asetettu 4 % alaspäin (≈25.95 € riski) ja on lähellä SMA200‑tukitasoa (631.68), mikä antaa selkeän teknisen tukipisteen. TP (707.25) on 9 % yli sisäänhinnan, mikä täyttää 2‑3‑kerran riskin vaatimuksen ja on riittävän kaukana seuraavasta vastustasosta, jotta 1:2‑ tai 1:3‑R:R‑suhde toteutuu.",
+            "toteutunut_tulos_eur": 0.0,
+            "toteutunut_tulos_pct": 0.0,
+            "sulkusyy": ""
+        },
+        {
+            "id": 3,
+            "ticker": "SMCI",
+            "tila": "AVOIN",
+            "vipu": 4,
+            "ostohinta": 33.720001220703125,
+            "panos": 500.0,
+            "stop_loss": 32.37,
+            "tavoite": 36.75,
+            "pvm": "2026-10-23",
+            "osavoitto_kotiutettu": false,
+            "aloitus_perustelu": "Stop-Loss asetetaan 32.37, mikä on 1.35 € (≈4.0 %) alapuolella sisääntulohintaa 33.720001220703125. Ensimmäinen Take Profit -tavoite on 36.75, eli 3.03 € (≈9.0 %) yläpuolella. Tämä antaa Risk/Reward-suhteen 1:2.24, mikä täyttää vaaditun vähintään 1:2‑suhteen. SMA200‑tuki 32.53 vahvistaa alarajan, ja tekninen kuvaaja näyttää tilaa TP‑tasolle ilman merkittävää vastustasoa lähellä, joten sijoitus on perusteltu.",
+            "toteutunut_tulos_eur": 0.0,
+            "toteutunut_tulos_pct": 0.0,
+            "sulkusyy": ""
+        },
+        {
+            "id": 4,
+            "ticker": "C",
+            "tila": "AVOIN",
+            "vipu": 4,
+            "ostohinta": 122.51000213623047,
+            "panos": 500.0,
+            "stop_loss": 117.61,
+            "tavoite": 133.54,
+            "pvm": "2026-10-23",
+            "osavoitto_kotiutettu": false,
+            "aloitus_perustelu": "Risk/Reward-suhde on R:R 1:2.75. Stop‑Loss asetetaan 117.61 €:iin, mikä on noin 4.0 % alapuolelle sisääntulohinnasta (122.51 €). Tämä taso on selvästi SMA200‑tukitasosta (125.72 €) alapuolella, eikä lähellä lähintä merkittävää vastustasoa, joten riski on hallittavissa. Take‑Profit asetetaan 133.54 €:iin, mikä on noin 11.0 % yläpuolelle sisääntulohintaa, tarjoten 2.75‑kertaisen mahdollisen voiton suhteessa mahdolliseen tappioon. Tämä täyttää vaaditun vähintään 1:2 – 1:3 R:R‑suhteen.",
             "toteutunut_tulos_eur": 0.0,
             "toteutunut_tulos_pct": 0.0,
             "sulkusyy": ""
