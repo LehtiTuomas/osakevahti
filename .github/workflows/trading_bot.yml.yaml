@@ -6,6 +6,9 @@ on:
     - cron: '30 23 * * 1-5'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-bots:
     runs-on: ubuntu-latest
@@ -31,10 +34,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python poerssivahti.py
 
-      # TÄMÄ VAIHE KORJAA VIRHEEN:
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "🤖 Päivitetty pörssivahdin muisti, salkku ja index.html"
-          file_pattern: "lahetetyt_lokit.txt salkku_data.json index.html"
+          file_pattern: "lahetetyt_lokit.txt salkku_data.json index.html viimeisin_baripvm.txt"
           commit_options: '--allow-empty-message'
