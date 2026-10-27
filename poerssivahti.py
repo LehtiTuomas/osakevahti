@@ -1,5 +1,8 @@
 import json
+import math
 import os
+import re
+import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
@@ -18,7 +21,7 @@ TICKERS = [
     "^GDAXI", "^NDX", "^GSPC", "^OMXH25",
 
     # Suomi / OMXH (Nordnet Mini Long / Futuurit)
-    "NOKIA.HE", "NESTE.HE", "UPM.HE", "FORTUM.HE", "KNEBV.HE", 
+    "NOKIA.HE", "NESTE.HE", "UPM.HE", "FORTUM.HE", "KNEBV.HE",
     "SAMPO.HE", "NDA-FI.HE", "WRT1V.HE", "VALMT.HE", "METSA.HE",
     "OUT1V.HE", "TYRES.HE", "ORNBV.HE", "HUH1V.HE", "ELISA.HE",
     "KESKOB.HE", "KEMIRA.HE", "QTCOM.HE",
@@ -44,9 +47,42 @@ TICKERS = [
 ]
 HISTORY_FILE = "lahetetyt_lokit.txt"
 PORTFOLIO_FILE = "salkku_data.json"
+BARIPVM_FILE = "viimeisin_baripvm.txt"   # muista committaa tämä Actionsissa kuten muutkin tiedostot
+
+# --- STRATEGIAN SÄÄNNÖT (muuta tarvittaessa) ---
+MAX_POSITIOITA = 4            # samanaikaisia positioita (avoimet + odottavat toimeksiannot)
+MAX_PER_SEKTORI = 2
+RISKI_PROSENTTI = 0.02        # max tappio / treidi = 2 % salkusta
+MIN_VIPU = 1                  # tekoäly valitsee vivun väliltä MIN_VIPU..MAX_VIPU
+MAX_VIPU = 10                 # (koodi rajaa sallitun maksimin SL-etäisyyden mukaan)
+VIPU_OLETUS = 3               # jos tekoäly ei anna kelvollista vipua
+KO_PUFFER = 0.5               # SL saa olla enintään 50 % matkasta Mini Longin knock-out-tasolle (≈ 1/vipu)
+MIN_PANOS = 100.0
+MAX_PANOS_OSUUS = 0.30        # yksittäinen panos enintään 30 % salkusta (matalalla vivulla panos kasvaisi muuten suureksi)
+MAX_SL_ETAISYYS = 0.06        # SL max 6 % päässä sisäänhinnasta
+MIN_RR = 2.0                  # R/R signaalihetkellä
+MIN_RR_TOTEUTUS = 1.5         # R/R, kun todellinen avaushinta tiedetään (pieni gap sallitaan)
+MIN_PISTEET = 7               # LLM:n fundamenttipisteet 1-10
+TULOSRAJA_PAIVIA = 7          # ei avata, jos tulosjulkistus näin lähellä
+KASSA_MIN_PROSENTTI = 0.20    # pidetään vähintään 20 % kassassa
+TOIMEKSIANNON_VANHENEMINEN_PV = 7
+
+FUNDAMENT_AVAIMET = {
+    "sektori": "sector", "markkina_arvo": "marketCap",
+    "forward_PE": "forwardPE", "trailing_PE": "trailingPE", "PEG": "pegRatio",
+    "liikevaihdon_kasvu": "revenueGrowth", "EPS_kasvu": "earningsGrowth",
+    "liikevoittomarginaali": "operatingMargins", "nettomarginaali": "profitMargins",
+    "ROE": "returnOnEquity", "velka_per_oma_paaoma": "debtToEquity",
+    "vapaa_kassavirta": "freeCashflow", "current_ratio": "currentRatio",
+    "analyytikoiden_tavoitehinta": "targetMeanPrice",
+    "analyytikoiden_suositus_1vahva_osta_5myy": "recommendationMean",
+    "analyytikoita": "numberOfAnalystOpinions", "beta": "beta",
+}
+
 
 def get_finland_time():
     return datetime.now(ZoneInfo("Europe/Helsinki"))
+
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -56,7 +92,54 @@ def send_telegram_message(message):
     except Exception as e:
         print(f"Telegram-viestin lähetysvirhe: {e}")
 
-# --- BOTTI 1: TIUKENNETTU VIIKKOMUISTI, FUNDAMENTTI- JA DIPPIVAHTI ---
+
+# --- APUFUNKTIOT ---
+def uusi_kaupankayntipaiva():
+    """Yöajo: etsitään uusia signaaleja vain, jos S&P 500:n viimeisin päiväkynttilä on uusi.
+    Estää saman perjantain datan käsittelyn uudelleen la/su, mutta sallii pe-illan ajon
+    vaikka se tapahtuisi suomen ajassa lauantain puolella."""
+    try:
+        viimeisin = str(yf.Ticker("^GSPC").history(period="5d").index[-1].date())
+    except Exception:
+        return True
+    edellinen = open(BARIPVM_FILE).read().strip() if os.path.exists(BARIPVM_FILE) else ""
+    if viimeisin == edellinen:
+        return False
+    with open(BARIPVM_FILE, "w") as f:
+        f.write(viimeisin)
+    return True
+
+
+def kutsu_llm(prompt, malli="openai/gpt-oss-120b", yrityksia=3):
+    """Free tier: pieni tauko kutsujen välillä ja uudelleenyritys rate limitin yli."""
+    for i in range(yrityksia):
+        try:
+            r = Groq(api_key=GROQ_API_KEY).chat.completions.create(
+                model=malli, messages=[{"role": "user", "content": prompt}], temperature=0.1)
+            time.sleep(2)
+            return r.choices[0].message.content
+        except Exception as e:
+            if "429" in str(e) or "rate" in str(e).lower():
+                time.sleep(20 * (i + 1))
+                continue
+            raise
+    return None
+
+
+def parse_json(text):
+    m = re.search(r"\{.*\}", text or "", re.S)
+    return json.loads(m.group(0)) if m else None
+
+
+def sallittu_max_vipu(sl_osuus):
+    """Mini Longin knock-out-taso on noin 1/vipu hinnan alapuolella. SL:n pitää jäädä selvästi
+    sen sisäpuolelle: SL-etäisyys <= KO_PUFFER / vipu  =>  vipu <= KO_PUFFER / SL-etäisyys."""
+    if sl_osuus <= 0:
+        return MIN_VIPU
+    return int(max(MIN_VIPU, min(MAX_VIPU, math.floor(KO_PUFFER / sl_osuus))))
+
+
+# --- BOTTI 1: VIIKKOMUISTI, FUNDAMENTTI- JA DIPPIVAHTI ---
 def lue_historia():
     current_week = get_finland_time().strftime("%Y-W%V")
     if os.path.exists(HISTORY_FILE):
@@ -65,11 +148,13 @@ def lue_historia():
         return set(r for r in rivit if current_week in r)
     return set()
 
+
 def tallenna_historia(ticker_symbol):
     current_week = get_finland_time().strftime("%Y-W%V")
     record = f"{ticker_symbol}_{current_week}"
     with open(HISTORY_FILE, "a") as f:
         f.write(record + "\n")
+
 
 def hae_uutiset_ja_keskustelut(ticker_obj):
     try:
@@ -88,80 +173,185 @@ def hae_uutiset_ja_keskustelut(ticker_obj):
     except Exception:
         return "Uutistietojen haku epäonnistui."
 
+
+def hae_fundamentit(ticker_obj):
+    try:
+        info = ticker_obj.info or {}
+    except Exception:
+        info = {}
+    return {k: info[v] for k, v in FUNDAMENT_AVAIMET.items() if info.get(v) is not None}
+
+
+def hae_tulostiedot(ticker_obj):
+    tulos = {"seuraava_tulospaiva": None, "paivia_tulokseen": None, "viimeiset_EPS_yllatykset_pct": []}
+    today = get_finland_time().date()
+    try:
+        cal = ticker_obj.calendar
+        pvmt = cal.get("Earnings Date") if isinstance(cal, dict) else None
+        tulevat = [d for d in (pvmt or []) if d >= today]
+        if tulevat:
+            seur = min(tulevat)
+            tulos["seuraava_tulospaiva"] = str(seur)
+            tulos["paivia_tulokseen"] = (seur - today).days
+    except Exception:
+        pass
+    try:
+        ed = ticker_obj.get_earnings_dates(limit=8)
+        if ed is not None and "Surprise(%)" in ed:
+            tulos["viimeiset_EPS_yllatykset_pct"] = [round(x, 1) for x in ed["Surprise(%)"].dropna().head(4)]
+    except Exception:
+        pass
+    return tulos
+
+
+def laske_tasot(df, hinta):
+    """SL ja TP lasketaan koodissa: ATR + swing low, TP vastustasosta. None jos R/R ei riitä."""
+    tr = pd.concat([
+        df["High"] - df["Low"],
+        (df["High"] - df["Close"].shift()).abs(),
+        (df["Low"] - df["Close"].shift()).abs(),
+    ], axis=1).max(axis=1)
+    atr = tr.rolling(14).mean().iloc[-1]
+    swing_low = df["Low"].tail(10).min()
+
+    sl = min(hinta - 1.5 * atr, swing_low * 0.995)
+    riski = hinta - sl
+    if riski <= 0 or riski / hinta > MAX_SL_ETAISYYS:
+        return None  # liian volatiili vivulle
+
+    vastus = df["High"].tail(120).max()           # lähin merkittävä vastustaso
+    tp = min(hinta + 3 * riski, vastus)
+    palkinto = tp - hinta
+    if palkinto / riski < MIN_RR:
+        return None  # ei tilaa nousulle
+    return {"sl": round(float(sl), 2), "tp": round(float(tp), 2), "rr": round(float(palkinto / riski), 2),
+            "sl_pct": float(riski / hinta * 100), "atr": round(float(atr), 2)}
+
+
 def botti_1_analysoi(ticker_symbol):
-    ticker = yf.Ticker(ticker_symbol)
-    df = ticker.history(period="1y")
-
+    """Palauttaa kandidaattisanakirjan tai None."""
+    t = yf.Ticker(ticker_symbol)
+    df = t.history(period="1y")
     if len(df) < 200:
-        return None, None, None
+        return None
 
-    df["SMA200"] = df["Close"].rolling(window=200).mean()
+    df["SMA200"] = df["Close"].rolling(200).mean()
     delta = df["Close"].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    df["RSI"] = 100 - (100 / (1 + (gain / loss)))
+    gain = delta.clip(lower=0).ewm(alpha=1 / 14, adjust=False).mean()   # Wilder RSI
+    loss = (-delta.clip(upper=0)).ewm(alpha=1 / 14, adjust=False).mean()
+    df["RSI"] = 100 - 100 / (1 + gain / loss)
 
-    current_price = df["Close"].iloc[-1]
-    prev_close = df["Close"].iloc[-2]
-    day_change_pct = ((current_price - prev_close) / prev_close) * 100
-    current_rsi = df["RSI"].iloc[-1]
+    hinta = df["Close"].iloc[-1]
+    muutos = (hinta / df["Close"].iloc[-2] - 1) * 100
+    rsi = df["RSI"].iloc[-1]
     sma200 = df["SMA200"].iloc[-1]
 
-    is_dipping = day_change_pct <= -2.0
-    is_rsi_low = current_rsi <= 40
-    is_in_long_term_uptrend = current_price > (sma200 * 0.97)
+    if not ((muutos <= -2.0 or rsi <= 40) and hinta > sma200 * 0.97):
+        return None
 
-    if not ((is_dipping or is_rsi_low) and is_in_long_term_uptrend):
-        return None, None, None
-
+    # 4 h -suodatin: ei osteta, jos päivän viimeiset tunnit vielä laskevat
     try:
-        df_hourly = ticker.history(period="5d", interval="1h")
-        if not df_hourly.empty and len(df_hourly) >= 4:
-            last_4_hours = df_hourly.tail(4)
-            price_4h_ago = last_4_hours["Close"].iloc[0]
-            if current_price < price_4h_ago:
-                return None, None, None
+        h = t.history(period="5d", interval="1h")
+        if len(h) >= 4 and hinta < h["Close"].iloc[-4]:
+            print(f"[{ticker_symbol}] hylätty: viimeiset 4 h vielä laskussa")
+            return None
     except Exception:
         pass
 
-    uutis_teksti = hae_uutiset_ja_keskustelut(ticker)
+    tasot = laske_tasot(df, hinta)
+    if not tasot:
+        print(f"[{ticker_symbol}] hylätty: R/R tai SL-etäisyys ei kelpaa")
+        return None
 
-    client = Groq(api_key=GROQ_API_KEY)
+    tulos = hae_tulostiedot(t)
+    if tulos["paivia_tulokseen"] is not None and tulos["paivia_tulokseen"] <= TULOSRAJA_PAIVIA:
+        print(f"[{ticker_symbol}] hylätty: tulos {tulos['paivia_tulokseen']} pv päässä")
+        return None
+
+    fundamentit = hae_fundamentit(t)
+    on_indeksi = ticker_symbol.startswith("^")
+    if not fundamentit and not on_indeksi:
+        print(f"[{ticker_symbol}] hylätty: ei fundamenttidataa")
+        return None
+
+    uutiset = hae_uutiset_ja_keskustelut(t)
+    max_vipu = sallittu_max_vipu(tasot["sl_pct"] / 100)
+    atr_pct = tasot["atr"] / hinta * 100
     prompt = f"""
-Olet kriittinen osake- ja fundamenttianalyytikko.
-Tarkista, onko osakkeessa menossa terveellinen dippi nousutrendissä VAI fundamentaalinen ongelma.
+Olet kriittinen osakeanalyytikko. Arvioi, onko {ticker_symbol}:n laskulle fundamentaalisesti
+perusteltu syy (huonontuva kasvu, marginaalit, velka, tulosmiss) vai onko kyseessä terveellinen dippi.
 
-OSAKE: {ticker_symbol}
-- Hinta: {current_price:.2f} | Päivämuutos: {day_change_pct:.2f}% | RSI: {current_rsi:.1f}
-- UUTISET / TULOSJULKAISUT: "{uutis_teksti}"
+SÄÄNNÖT: Käytä VAIN alla annettua dataa. Älä keksi lukuja. Jos tieto puuttuu, sano "ei dataa".
+Älä mainitse todennäköisyyksiä. Viittaa perusteluissa konkreettisiin lukuihin.
 
-Vastaa TÄSMÄLLEEN muodossa:
-PÄÄTÖS: [HYVÄKSYTTY tai HYLÄTTY]
-PERUSTELU: [1-2 lauseen fundamenttianalyysi uutisista ja taustasta]
-"""
+TEKNINEN: hinta {hinta:.2f}, päivämuutos {muutos:.2f} %, RSI {rsi:.1f}, SMA200 {sma200:.2f}
+RISKIPROFIILI: ATR {atr_pct:.1f} % hinnasta, SL {tasot['sl_pct']:.1f} % päässä, R/R 1:{tasot['rr']}, beta {fundamentit.get('beta', 'ei dataa')}
 
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-    )
-    vastaus = response.choices[0].message.content.strip()
+VIVUN VALINTA: Valitse Mini Long -vipu kokonaislukuna 1-{max_vipu} (koodi on jo rajannut sallitun maksimin).
+Koodi mitoittaa panoksen niin, että tappio SL:ssä on aina sama ({RISKI_PROSENTTI * 100:.0f} % salkusta) vivusta riippumatta.
+Vipu ei siis kasvata SL-tappiota, mutta korkea vipu lähentää knock-out-rajaa ja kasvattaa gap-riskiä
+(yön yli -avaus voi ohittaa SL:n). Tavoite: paras tuotto minimaalisella riskillä.
+Korkea vipu (7-{max_vipu}) vain, jos SL on lähellä, volatiliteetti matala, fundamentit vahvat (pisteet 8+) eikä
+tulosjulkistusta tai muuta tapahtumariskiä ole lähellä. Epävarmassa tai volatiilissa tilanteessa valitse matala vipu (1-4).
+FUNDAMENTIT (JSON): {json.dumps(fundamentit, default=str, ensure_ascii=False)}
+TULOKSET: {json.dumps(tulos, ensure_ascii=False)}
+UUTISET: {uutiset}
 
-    if "HYVÄKSYTTY" in vastaus:
-        return current_price, sma200, vastaus
+Vastaa vain JSON:
+{{
+  "paatos": "HYVÄKSYTTY" tai "HYLÄTTY",
+  "pisteet": kokonaisluku 1-10 (fundamentaalinen laatu + dipin terveellisyys),
+  "vipu": kokonaisluku 1-{max_vipu},
+  "vipu_perustelu": "1 lause: miksi tämä vipu (volatiliteetti, SL-etäisyys, tapahtumariski)",
+  "fundamentit": "2-3 lausetta: kasvu, kannattavuus, arvostus, velka - luvuilla",
+  "dipin_syy": "mikä todennäköisesti selittää laskun",
+  "riskit": "tärkeimmät 1-2 riskiä",
+  "katalyytti": "mikä voisi ajaa nousun, tai 'ei selvää'"
+}}"""
+    try:
+        a = parse_json(kutsu_llm(prompt))
+    except Exception as e:
+        print(f"[{ticker_symbol}] LLM-virhe: {e}")
+        return None
+    # Kirjataan myös hylätyt: samaa osaketta ei kysytä uudelleen saman viikon aikana (säästää tokeneita)
+    tallenna_historia(ticker_symbol)
 
-    return None, None, None
+    try:
+        pisteet = int(a.get("pisteet", 0)) if a else 0
+    except (TypeError, ValueError):
+        pisteet = 0
+    if not a or a.get("paatos") != "HYVÄKSYTTY" or pisteet < MIN_PISTEET:
+        return None
+    a["pisteet"] = pisteet
+    try:
+        vipu = int(a.get("vipu", VIPU_OLETUS))
+    except (TypeError, ValueError):
+        vipu = VIPU_OLETUS
+    vipu = max(MIN_VIPU, min(vipu, max_vipu))
+
+    return {"ticker": ticker_symbol, "hinta": float(hinta), "rsi": float(rsi), "muutos": float(muutos),
+            "sma200": float(sma200), "tasot": tasot, "analyysi": a,
+            "vipu": vipu, "vipu_perustelu": a.get("vipu_perustelu", ""),
+            "baripvm": str(df.index[-1].date()),
+            "sektori": fundamentit.get("sektori", "indeksi" if on_indeksi else "tuntematon"),
+            "tulos": tulos}
+
 
 # --- BOTTI 2: SALKKU- JA TREIDILOGIIKKA ---
 def lataa_salkku():
     if os.path.exists(PORTFOLIO_FILE):
         with open(PORTFOLIO_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"kassa": 3000.00, "alkupääoma": 3000.00, "positiot": []}
+            salkku = json.load(f)
+    else:
+        salkku = {"kassa": 3000.00, "alkupääoma": 3000.00, "positiot": []}
+    salkku.setdefault("toimeksiannot", [])
+    return salkku
+
 
 def tallenna_salkku(salkku):
     with open(PORTFOLIO_FILE, "w", encoding="utf-8") as f:
         json.dump(salkku, f, indent=4, ensure_ascii=False)
+
 
 def laske_kokonaissaldo(salkku):
     avoimet_arvo = 0
@@ -170,7 +360,7 @@ def laske_kokonaissaldo(salkku):
             try:
                 ticker = yf.Ticker(pos["ticker"])
                 hinta_nyt = ticker.history(period="1d")["Close"].iloc[-1]
-            except:
+            except Exception:
                 hinta_nyt = pos["ostohinta"]
             vipu = pos.get("vipu", 1)
             hinnan_muutos_pct = (hinta_nyt - pos["ostohinta"]) / pos["ostohinta"]
@@ -179,180 +369,238 @@ def laske_kokonaissaldo(salkku):
             avoimet_arvo += max(0, vivutettu_arvo)
     return salkku["kassa"] + avoimet_arvo
 
-def botti_2_tee_sijoituspaatos(ticker_symbol, current_price, sma200, botti_1_analyysi):
+
+def luo_odottava_toimeksianto(k):
+    """Yöajo luo vain toimeksiannon. Sisääntulo tapahtuu seuraavan kaupankäyntipäivän AVAUSHINNALLA."""
     salkku = lataa_salkku()
+    odottavat = salkku["toimeksiannot"]
+    avoimet = [p for p in salkku["positiot"] if p["tila"] == "AVOIN"]
+    kaikki = avoimet + odottavat
 
-    for pos in salkku["positiot"]:
-        if pos["ticker"] == ticker_symbol and pos["tila"] == "AVOIN":
-            return
+    if len(kaikki) >= MAX_POSITIOITA:
+        return False
+    if any(p["ticker"] == k["ticker"] for p in kaikki):
+        return False
+    if sum(1 for p in kaikki if p.get("sektori") == k["sektori"]) >= MAX_PER_SEKTORI:
+        print(f"[{k['ticker']}] ohitettu: sektoriraja ({k['sektori']})")
+        return False
 
-    kokonaissaldo = laske_kokonaissaldo(salkku)
-    max_risk_eur = kokonaissaldo * 0.10
-    max_mahdollinen_panos = min(salkku["kassa"], kokonaissaldo * 0.90)
+    a, t = k["analyysi"], k["tasot"]
+    odottavat.append({
+        "ticker": k["ticker"], "sektori": k["sektori"], "pisteet": a["pisteet"],
+        "signaali_pvm": k["baripvm"], "signaalihinta": round(k["hinta"], 2),
+        "sl": t["sl"], "tp": t["tp"], "rr_signaali": t["rr"],
+        "vipu": k["vipu"], "vipu_perustelu": k["vipu_perustelu"],
+        "rsi": round(k["rsi"], 1), "muutos": round(k["muutos"], 2), "sma200": round(k["sma200"], 2),
+        "fundamentit": a.get("fundamentit", ""), "dipin_syy": a.get("dipin_syy", ""),
+        "riskit": a.get("riskit", ""), "katalyytti": a.get("katalyytti", ""),
+    })
+    tallenna_salkku(salkku)
+    send_telegram_message(
+        f"📝 <b>TOIMEKSIANTO: {k['ticker']}</b> (täytetään seuraavan päivän avauksessa)\n"
+        f"Signaalihinta {k['hinta']:.2f} | SL {t['sl']} | TP {t['tp']} | R/R 1:{t['rr']} | {a['pisteet']}/10 | vipu x{k['vipu']}\n"
+        f"{a.get('fundamentit', '')}\nRiskit: {a.get('riskit', '')}"
+    )
+    return True
 
-    if max_mahdollinen_panos < 100:
-        print(f"Käteiskassa liian pieni uuteen treidiin (< 100 €)")
+
+def toteuta_toimeksiannot():
+    """Täyttää toimeksiannot signaalin JÄLKEISEN ensimmäisen kynttilän avaushinnalla,
+    tarkistaa R/R:n uudelleen ja laskee panoksen uudelleen (riski pysyy RISKI_PROSENTTI:ssa)."""
+    salkku = lataa_salkku()
+    odottavat = salkku["toimeksiannot"]
+    if not odottavat:
         return
+    jaljella = []
 
-    client = Groq(api_key=GROQ_API_KEY)
-    prompt = f"""
-Olet ammattimainen ja kurinalainen viputuotteiden (Nordnet Mini Long) swing-treidausbotti. 
+    for o in odottavat:
+        try:
+            hist = yf.Ticker(o["ticker"]).history(period="15d")
+            hist = hist[hist.index.strftime("%Y-%m-%d") > o["signaali_pvm"]]
+        except Exception:
+            jaljella.append(o)
+            continue
 
-EHDOTON RISK/REWARD -SÄÄNTÖ (ASETETAAN AINA TÄSMÄLLEEN):
-- Risk/Reward-suhteen (R:R) TÄYTYY olla VÄHINTÄÄN 1:2, MIELELLÄÄN 1:3 joka ikisessä treidissä!
-- Jos Stop-Loss on esim. X % alle sisäänhinnan, ensimmäisen tavoitteen (Take Profit) TÄYTYY olla VÄHINTÄÄN 2X–3X kauempana noususuunnassa.
-- Esimerkki: Jos Stop-Loss asetetaan 3 % alle nykyhinnan, Take Profitin TÄYTYY olla VÄHINTÄÄN 6 % – 9 % yli nykyhinnan.
-- Jos teknisessä kuvassa ei ole tilaa 1:2 tai 1:3 R:R-suhteelle lähimpään vastustasoon nähden, ASETA "sijoita": false!
+        if hist.empty:   # esim. viikonloppu tai data puuttuu: odotetaan
+            ika = (get_finland_time().date() - datetime.strptime(o["signaali_pvm"], "%Y-%m-%d").date()).days
+            if ika > TOIMEKSIANNON_VANHENEMINEN_PV:
+                send_telegram_message(f"⌛ <b>Toimeksianto vanheni: {o['ticker']}</b>")
+            else:
+                jaljella.append(o)
+            continue
 
-STRATEGINEN TAVOITE:
-- Pyrit pitkällä aikavälillä siihen, että noin 2/3 (67 %) avaamistasi treideistä saavuttaa tavoitteensa.
-- Maksimoit salkun kokonaistuoton yhdistämällä korkean voittoprosentin ja kurinalaisen 1:2 / 1:3 R:R-suhteen.
+        bar = hist.iloc[0]
+        entry = float(bar["Open"])
+        sl, tp = o["sl"], o["tp"]
+        riski, palkinto = entry - sl, tp - entry
+        avoimet = [p for p in salkku["positiot"] if p["tila"] == "AVOIN"]
+        saldo = laske_kokonaissaldo(salkku)
 
-SALKUN TILA & RAJOITUKSET:
-- Salkun kokonaisarvo: {kokonaissaldo:.2f} € | Käteiskassa: {salkku['kassa']:.2f} €
-- Maksimiriski (Stop-Loss -tappio): enintään {max_risk_eur:.2f} € (10% salkusta)
-- Sijoitettava panos: vähintään 100.00 € ja enintään {max_mahdollinen_panos:.2f} €
+        syy = None
+        if riski <= 0:
+            syy = f"avaus {entry:.2f} SL:n ({sl}) alapuolella"
+        elif palkinto <= 0:
+            syy = f"avaus {entry:.2f} jo TP:n ({tp}) yläpuolella"
+        elif palkinto / riski < MIN_RR_TOTEUTUS:
+            syy = f"R/R avauksessa vain 1:{palkinto / riski:.2f}"
+        elif riski / entry > MAX_SL_ETAISYYS:
+            syy = "SL liian kaukana avaushinnasta"
+        elif len(avoimet) >= MAX_POSITIOITA:
+            syy = "positioraja täynnä"
 
-ANALYYSITIEDOT:
-- Botti 1 fundamenttianalyysi: "{botti_1_analyysi}"
-- Kohde: {ticker_symbol} | Nykyhinta: {current_price:.2f} | SMA200-tuki: {sma200:.2f}
+        panos = 0.0
+        vipu = VIPU_OLETUS
+        if not syy:
+            sl_osuus = riski / entry
+            # Tekoälyn ehdottama vipu rajataan toteutushinnalla: SL pysyy selvästi knock-outin sisäpuolella
+            vipu = max(MIN_VIPU, min(int(o.get("vipu", VIPU_OLETUS)), sallittu_max_vipu(sl_osuus)))
+            riski_eur = saldo * RISKI_PROSENTTI
+            # Jos panos jäisi liian pieneksi, pienennetään vipua (suurempi panos samalla riskillä)
+            while vipu > MIN_VIPU and riski_eur / (vipu * sl_osuus) < MIN_PANOS:
+                vipu -= 1
+            panos = riski_eur / (vipu * sl_osuus)
+            panos = round(min(panos, salkku["kassa"] - saldo * KASSA_MIN_PROSENTTI, saldo * MAX_PANOS_OSUUS), 2)
+            if panos < MIN_PANOS:
+                syy = f"panos < {MIN_PANOS:.0f} € (kassareservi)"
 
-Tee sijoituspäätös JSON-muodossa ilman markdown-tageja:
-{{
-  "sijoita": true,
-  "panos": 500.0,
-  "vipu": 4,
-  "perustelu": "Kuvaa tässä tarkka Risk/Reward-suhde (esim. R:R 1:2.5) ja mihin teknisiin tasoihin SL/TP perustuvat",
-  "sisääntulohinta": {current_price},
-  "stop_loss": {round(current_price * 0.96, 2)},
-  "ensimmainen_tukitaso_tavoite": {round(current_price * 1.09, 2)}
-}}
-"""
+        if syy:
+            print(f"[{o['ticker']}] toimeksianto peruttu: {syy}")
+            send_telegram_message(f"❌ <b>Toimeksianto peruttu: {o['ticker']}</b>\n{syy}")
+            continue
 
-    try:
-        response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
+        gap = (entry / o["signaalihinta"] - 1) * 100
+        rr = palkinto / riski
+        perustelu = (
+            f"<b>Fundamentit ({o['pisteet']}/10):</b> {o['fundamentit']}<br>"
+            f"<b>Dipin syy:</b> {o['dipin_syy']}<br>"
+            f"<b>Riskit:</b> {o['riskit']}<br>"
+            f"<b>Katalyytti:</b> {o['katalyytti']}<br>"
+            f"<b>Vipu x{vipu}:</b> {o.get('vipu_perustelu', '')} "
+            f"(knock-out ≈ {100 / vipu:.0f} % alempana, SL {riski / entry * 100:.1f} %)<br>"
+            f"<b>Tekninen:</b> RSI {o['rsi']}, päivä {o['muutos']} %, SMA200 {o['sma200']}. "
+            f"SL {sl} (1,5×ATR / swing low), TP {tp} (vastustaso).<br>"
+            f"<b>Toteutus:</b> signaali {o['signaali_pvm']} sulku {o['signaalihinta']}, "
+            f"täyttö avaushinnalla {entry:.2f} (gap {gap:+.2f} %), R/R toteutuksessa 1:{rr:.2f}. "
+            f"Riski {saldo * RISKI_PROSENTTI:.0f} € ({RISKI_PROSENTTI * 100:.0f} % salkusta)."
         )
-        res_text = response.choices[0].message.content.strip().replace("```json", "").replace("```", "").strip()
-        data = json.loads(res_text)
+        salkku["kassa"] -= panos
+        salkku["positiot"].append({
+            "id": len(salkku["positiot"]) + 1, "ticker": o["ticker"], "tila": "AVOIN",
+            "vipu": vipu, "ostohinta": round(entry, 2), "panos": panos,
+            "stop_loss": sl, "tavoite": tp,
+            "pvm": str(hist.index[0].date()),            # todellinen kaupankäyntipäivä
+            # täyttöpäivän kynttilä (avauksesta eteenpäin) kuuluu SL/TP-tarkistukseen:
+            "baripvm": o["signaali_pvm"], "viimeksi_tarkistettu": o["signaali_pvm"],
+            "sektori": o["sektori"], "pisteet": o["pisteet"],
+            "osavoitto_kotiutettu": False, "aloitus_perustelu": perustelu,
+            "toteutunut_tulos_eur": 0.0, "toteutunut_tulos_pct": 0.0, "sulkusyy": "",
+        })
+        send_telegram_message(
+            f"🤖 <b>UUSI MINI LONG: {o['ticker']} x{vipu}</b>\n"
+            f"Täyttö {entry:.2f} (gap {gap:+.2f} %) | Panos {panos:.2f} € | R/R 1:{rr:.2f}\n"
+            f"SL {sl} | TP {tp}"
+        )
 
-        if data.get("sijoita"):
-            # Varmistetaan vielä kooditasolla, että Risk/Reward on vähintään 1:1.95 ennen hyväksyntää
-            sisään = float(data["sisääntulohinta"])
-            sl = float(data["stop_loss"])
-            tp = float(data["ensimmainen_tukitaso_tavoite"])
+    salkku["toimeksiannot"] = jaljella
+    tallenna_salkku(salkku)
 
-            riski = sisään - sl
-            palkinto = tp - sisään
 
-            if riski <= 0 or (palkinto / riski) < 1.95:
-                print(f"[{ticker_symbol}] Tekoälyn ehdottama R:R ei täyttänyt vähintään 1:2 ehtoa (Laskettu R:R = 1:{(palkinto/riski) if riski>0 else 0:.2f}). Hylätään kauppa.")
-                return
+def hae_baarit_avauksen_jalkeen(pos):
+    """Vain kynttilät, joita ei ole vielä tarkistettu. Estää avauspäivän vanhan Low:n aiheuttaman
+    väärän stopin sekä osavoiton jälkeen siirretyn SL:n tarkistamisen vanhoja kynttilöitä vastaan."""
+    raja = pos.get("viimeksi_tarkistettu", pos.get("baripvm", pos["pvm"]))
+    hist = yf.Ticker(pos["ticker"]).history(period="15d")
+    return hist[hist.index.strftime("%Y-%m-%d") > raja]
 
-            panos = float(data.get("panos", 100.0))
-            panos = max(100.0, min(panos, salkku["kassa"]))
-            vipu = max(1, min(10, int(data.get("vipu", 3))))
 
-            uusipositio = {
-                "id": len(salkku["positiot"]) + 1,
-                "ticker": ticker_symbol,
-                "tila": "AVOIN",
-                "vipu": vipu,
-                "ostohinta": sisään,
-                "panos": panos,
-                "stop_loss": sl,
-                "tavoite": tp,
-                "pvm": get_finland_time().strftime("%Y-%m-%d"),
-                "osavoitto_kotiutettu": False,
-                "aloitus_perustelu": data.get("perustelu", "Teknisen ja fundamenttianalyysin perusteella valittu kohde."),
-                "toteutunut_tulos_eur": 0.0,
-                "toteutunut_tulos_pct": 0.0,
-                "sulkusyy": ""
-            }
-            salkku["kassa"] -= panos
-            salkku["positiot"].append(uusipositio)
-            tallenna_salkku(salkku)
+def tarvitsee_ai_tarkistuksen(pos, current_price, ticker_obj):
+    """Säästää tokeneita: LLM kysytään sulkupäätökseen vain, jos tappio on syvä tai tulos on lähellä."""
+    vivutettu = (current_price / pos["ostohinta"] - 1) * pos.get("vipu", 1) * 100
+    if vivutettu <= -8:
+        return True
+    paivia = hae_tulostiedot(ticker_obj)["paivia_tulokseen"]
+    return paivia is not None and paivia <= 2
 
-            viesti = (
-                f"🤖 <b>BOTTI 2: UUSI MINI LONG AVATTU (Vipu x{vipu})</b> 🤖\n"
-                f"- Kohde: {ticker_symbol}\n"
-                f"- Panos: {panos:.2f} € | Vipu: x{vipu}\n"
-                f"- R:R Suhde: 1:{(palkinto/riski):.2f}\n"
-                f"- Perustelu: {data['perustelu']}\n"
-                f"- Stop-Loss: {sl:.2f} €\n"
-                f"- Take Profit: {tp:.2f} €"
-            )
-            send_telegram_message(viesti)
-    except Exception as e:
-        print(f"Botti 2 päätösvirhe: {e}")
+
+def sulje_positio(pos, salkku, hinta, syy):
+    vipu = pos.get("vipu", 1)
+    vivutettu_tulos_pct = ((hinta - pos["ostohinta"]) / pos["ostohinta"]) * vipu
+    jella_oleva_osuus = 0.5 if pos.get("osavoitto_kotiutettu") else 1.0
+    panos_osa = pos["panos"] * jella_oleva_osuus
+    loppuarvo = max(0, panos_osa * (1 + vivutettu_tulos_pct))
+
+    pos["tila"] = "SULJETTU"
+    pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + (loppuarvo - panos_osa)
+    pos["toteutunut_tulos_pct"] = vivutettu_tulos_pct * 100
+    pos["sulkusyy"] = syy
+    salkku["kassa"] += loppuarvo
+
+
+def kotiuta_osavoitto(pos, salkku, hinta):
+    vipu = pos.get("vipu", 1)
+    vivutettu_tulos_pct = ((hinta - pos["ostohinta"]) / pos["ostohinta"]) * vipu
+    myyty_osuus_panoksesta = pos["panos"] / 2
+    myyty_arvo = myyty_osuus_panoksesta * (1 + vivutettu_tulos_pct)
+
+    pos["osavoitto_kotiutettu"] = True
+    pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + (myyty_arvo - myyty_osuus_panoksesta)
+    pos["stop_loss"] = pos["ostohinta"]
+    salkku["kassa"] += myyty_arvo
+
 
 def paivita_avoimet_treidit():
     salkku = lataa_salkku()
     muutos_tehty = False
-    client = Groq(api_key=GROQ_API_KEY)
 
     for pos in salkku["positiot"]:
         if pos["tila"] != "AVOIN":
             continue
         try:
-            ticker = yf.Ticker(pos["ticker"])
-            hist = ticker.history(period="2d")
-            if hist.empty:
-                continue
-            paivan_alin = hist["Low"].iloc[-1]
-            paivan_ylin = hist["High"].iloc[-1]
-            current_price = hist["Close"].iloc[-1]
-        except:
+            hist = hae_baarit_avauksen_jalkeen(pos)
+        except Exception as e:
+            print(f"[{pos['ticker']}] kurssihaku epäonnistui: {e}")
+            continue
+        if hist.empty:
             continue
 
         vipu = pos.get("vipu", 1)
 
-        # 1. Stop-Loss tarkistus
-        if paivan_alin <= pos["stop_loss"]:
-            pos["tila"] = "SULJETTU"
-            hinnan_muutos_pct = (pos["stop_loss"] - pos["ostohinta"]) / pos["ostohinta"]
-            vivutettu_tulos_pct = hinnan_muutos_pct * vipu
-            jella_oleva_osuus = 0.5 if pos.get("osavoitto_kotiutettu") else 1.0
-            panos_osa = pos["panos"] * jella_oleva_osuus
-            loppuarvo = max(0, panos_osa * (1 + vivutettu_tulos_pct))
-            
-            tulos_eur = loppuarvo - panos_osa
-            pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
-            pos["toteutunut_tulos_pct"] = vivutettu_tulos_pct * 100
-            pos["sulkusyy"] = f"Stop-Loss laukesi (Päivän alin {paivan_alin:.2f} € alitti tason {pos['stop_loss']:.2f} €)"
+        # Käydään uudet kynttilät läpi kronologisesti
+        for _, bar in hist.iterrows():
+            # 1. Stop-Loss (gap alas toteutuu avaushinnalla, jos se on SL:ää huonompi)
+            if bar["Low"] <= pos["stop_loss"]:
+                toteutus = min(pos["stop_loss"], float(bar["Open"]))
+                sulje_positio(pos, salkku, toteutus,
+                              f"Stop-Loss laukesi (päivän alin {bar['Low']:.2f} alitti tason {pos['stop_loss']:.2f}, toteutus {toteutus:.2f})")
+                send_telegram_message(
+                    f"🛑 <b>BOTTI 2: STOP-LOSS LAUKESI ({pos['ticker']} Vipu x{vipu})</b>\n"
+                    f"Päivän alin ({bar['Low']:.2f}) osui stop-lossiin ({pos['stop_loss']:.2f}). Toteutus {toteutus:.2f}. Positio suljettu."
+                )
+                break
 
-            salkku["kassa"] += loppuarvo
-            muutos_tehty = True
-            send_telegram_message(
-                f"🛑 <b>BOTTI 2: STOP-LOSS LAUKESI ({pos['ticker']} Vipu x{vipu})</b>\n"
-                f"Päivän alin ({paivan_alin:.2f}) osui stop-lossiin ({pos['stop_loss']:.2f}). Positio suljettu."
-            )
+            # 2. Take Profit (osavoitto): ylös gappaava avaus toteutuu avaushinnalla
+            if not pos.get("osavoitto_kotiutettu") and bar["High"] >= pos["tavoite"]:
+                toteutus = max(pos["tavoite"], float(bar["Open"]))
+                kotiuta_osavoitto(pos, salkku, toteutus)
+                send_telegram_message(
+                    f"🎯 <b>BOTTI 2: OSAVOITTO KOTIUTETTU ({pos['ticker']} Vipu x{vipu})</b>\n"
+                    f"Päivän ylin ({bar['High']:.2f}) saavutti tavoitteen ({pos['tavoite']:.2f}). "
+                    f"Myyty 50 % hintaan {toteutus:.2f}, stop-loss nostettu sisäänhintaan!"
+                )
+                # SL (nyt sisäänhinta) tarkistetaan seuraavista kynttilöistä
+
+        pos["viimeksi_tarkistettu"] = str(hist.index[-1].date())
+        muutos_tehty = True
+
+        if pos["tila"] != "AVOIN":
             continue
 
-        # 2. Take Profit (Osavoitto)
-        if not pos.get("osavoitto_kotiutettu") and paivan_ylin >= pos["tavoite"]:
-            pos["osavoitto_kotiutettu"] = True
-            hinnan_muutos_pct = (pos["tavoite"] - pos["ostohinta"]) / pos["ostohinta"]
-            vivutettu_tulos_pct = hinnan_muutos_pct * vipu
-            myyty_osuus_panoksesta = pos["panos"] / 2
-            myyty_arvo = myyty_osuus_panoksesta * (1 + vivutettu_tulos_pct)
-            
-            tulos_eur = myyty_arvo - myyty_osuus_panoksesta
-            pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
-            pos["stop_loss"] = pos["ostohinta"]
-
-            salkku["kassa"] += myyty_arvo
-            muutos_tehty = True
-            send_telegram_message(
-                f"🎯 <b>BOTTI 2: OSAVOITTO KOTIUTETTU ({pos['ticker']} Vipu x{vipu})</b>\n"
-                f"Päivän ylin saavutti tavoitteen ({pos['tavoite']:.2f}). Myyty 50%, stop-loss nostettu sisäänhintaan!"
-            )
-            continue
-
-        # 3. TEKOÄLYN SULKUPÄÄTÖS (Uutisriskit tai käänne)
+        # 3. TEKOÄLYN SULKUPÄÄTÖS (vain jos tappio syvä tai tulos lähellä)
         try:
+            current_price = float(hist["Close"].iloc[-1])
+            ticker = yf.Ticker(pos["ticker"])
+            if not tarvitsee_ai_tarkistuksen(pos, current_price, ticker):
+                continue
             uutis_teksti = hae_uutiset_ja_keskustelut(ticker)
             hinnan_muutos_nyt = ((current_price - pos["ostohinta"]) / pos["ostohinta"]) * 100 * vipu
 
@@ -363,7 +611,7 @@ Olet kurinalainen swing-treidaaja. Hallinnoit avointa Mini Long -positiota kohte
 - Osavoitto kotiutettu: {pos.get('osavoitto_kotiutettu')}
 - Uutiset: "{uutis_teksti}"
 
-SÄÄNTÖ: Oletusarvoisesti anna treidin juosta Stop-Lossiin tai Take Profitiin asti! 
+SÄÄNTÖ: Oletusarvoisesti anna treidin juosta Stop-Lossiin tai Take Profitiin asti!
 Sulje positio ENNENAIKAISESTI VAIN, JOS uutisissa näkyy VAKAVA UUTISRISKI tai FUNDAMENTAALINEN KÄÄNNE.
 
 Vastaa JSON-muodossa ilman markdown-tageja:
@@ -372,30 +620,10 @@ Vastaa JSON-muodossa ilman markdown-tageja:
   "perustelu": "Lyhyt syy myynnille tai pitämiselle"
 }}
 """
-            ai_response = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-            )
-            res_text = ai_response.choices[0].message.content.strip().replace("```json", "").replace("```", "").strip()
-            ai_decision = json.loads(res_text)
-
-            if ai_decision.get("sulje_positio"):
-                pos["tila"] = "SULJETTU"
-                hinnan_muutos_pct = (current_price - pos["ostohinta"]) / pos["ostohinta"]
-                vivutettu_tulos_pct = hinnan_muutos_pct * vipu
-                jella_oleva_osuus = 0.5 if pos.get("osavoitto_kotiutettu") else 1.0
-                panos_osa = pos["panos"] * jella_oleva_osuus
-                loppuarvo = max(0, panos_osa * (1 + vivutettu_tulos_pct))
-
-                tulos_eur = loppuarvo - panos_osa
-                pos["toteutunut_tulos_eur"] = pos.get("toteutunut_tulos_eur", 0.0) + tulos_eur
-                pos["toteutunut_tulos_pct"] = vivutettu_tulos_pct * 100
-                pos["sulkusyy"] = f"Tekoälyn ennenaikainen myynti: {ai_decision.get('perustelu')}"
-
-                salkku["kassa"] += loppuarvo
-                muutos_tehty = True
-
+            ai_decision = parse_json(kutsu_llm(prompt))
+            if ai_decision and ai_decision.get("sulje_positio"):
+                sulje_positio(pos, salkku, current_price,
+                              f"Tekoälyn ennenaikainen myynti: {ai_decision.get('perustelu')}")
                 send_telegram_message(
                     f"🤖 <b>BOTTI 2: TEKOÄLY SULKI POSITION ({pos['ticker']} Vipu x{vipu})</b>\n"
                     f"- Hinta: {current_price:.2f}\n"
@@ -406,6 +634,7 @@ Vastaa JSON-muodossa ilman markdown-tageja:
 
     if muutos_tehty:
         tallenna_salkku(salkku)
+
 
 def paivita_salkku_html():
     salkku = lataa_salkku()
@@ -419,7 +648,7 @@ def paivita_salkku_html():
     <html lang="fi">
     <head>
         <meta charset="UTF-8">
-        <title>Botti 2 - Autonominen Viputreidaussalkku</title>
+        <title>Treidausbotti - Autonominen Viputreidaussalkku</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             * {{ box-sizing: border-box; }}
@@ -427,7 +656,7 @@ def paivita_salkku_html():
             .container {{ max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }}
             h1 {{ color: #1a73e8; text-align: center; margin-bottom: 5px; font-size: 1.8em; }}
             .subtitle {{ text-align: center; color: #666; font-size: 0.88em; margin-bottom: 20px; }}
-            
+
             .strategy-box {{ background: #eef5fe; border: 1px solid #d0e1fd; border-left: 5px solid #1a73e8; padding: 15px 18px; border-radius: 8px; margin-bottom: 25px; font-size: 0.88em; color: #2c3e50; line-height: 1.5; }}
             .strategy-box h4 {{ margin: 0 0 6px 0; color: #1a73e8; font-size: 1.05em; display: flex; align-items: center; gap: 6px; }}
             .strategy-box ul {{ margin: 6px 0 0 0; padding-left: 20px; }}
@@ -437,14 +666,14 @@ def paivita_salkku_html():
             .card {{ background: #f8f9fa; padding: 18px; border-radius: 8px; border-left: 5px solid #1a73e8; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }}
             .card h3 {{ margin: 0 0 5px 0; color: #555; font-size: 0.85em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }}
             .card p {{ margin: 0; font-size: 1.4em; font-weight: bold; color: #222; }}
-            
+
             h2 {{ color: #333; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; font-size: 1.25em; }}
-            
+
             .table-responsive {{ width: 100%; overflow-x: auto; margin-bottom: 30px; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }}
             th, td {{ padding: 12px 10px; text-align: left; border-bottom: 1px solid #e0e0e0; vertical-align: top; }}
             th {{ background-color: #f8f9fa; color: #444; font-weight: 600; white-space: nowrap; }}
-            
+
             .nowrap {{ white-space: nowrap; }}
             .pos {{ color: #2e7d32; font-weight: bold; }}
             .neg {{ color: #c62828; font-weight: bold; }}
@@ -457,14 +686,14 @@ def paivita_salkku_html():
                 body {{ padding: 10px; }}
                 .container {{ padding: 15px; }}
                 h1 {{ font-size: 1.4em; }}
-                
+
                 table, thead, tbody, th, td, tr {{ display: block; }}
                 thead {{ display: none; }}
-                
+
                 tr {{ margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }}
                 td {{ display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.88em; }}
                 td:last-child {{ border-bottom: none; flex-direction: column; align-items: flex-start; gap: 4px; padding-top: 10px; }}
-                
+
                 td::before {{ content: attr(data-label); font-weight: 600; color: #666; margin-right: 15px; flex-shrink: 0; }}
                 .nowrap {{ white-space: normal; }}
                 .reason-box {{ width: 100%; margin-top: 4px; }}
@@ -475,16 +704,18 @@ def paivita_salkku_html():
         <div class="container">
             <h1>Botti 2: Autonominen Treidaussalkku (Mini Long)</h1>
             <div class="subtitle">Alkupääoma: {salkku['alkupääoma']:.2f} € | Päivitetty: {get_finland_time().strftime("%d.%m.%Y klo %H:%M")}</div>
-            
+
             <div class="strategy-box">
                 <h4>📊 Osakevalintastrategia & Kriteerit</h4>
                 Salkkuun hyväksytään vain poikkeuksellisen vahvat swing-paikat Nordnet Mini Long -tuotteilla noudattaen näitä sääntöjä:
                 <ul>
-                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla pitkän aikavälin nousutrendissä (<b>hinta > 97% SMA200</b>).</li>
-                    <li><b>Dippi / Ylilyönti:</b> Haetaan tilapäistä korjausliikettä (päivälasku <b>≤ -2.0%</b> tai 14p <b>RSI ≤ 40</b>).</li>
-                    <li><b>Fundamenttisuoja:</b> Groq-tekoäly lukee uutiset ja tulostiedotteet. Dippi hylätään heti, jos taustalla on fundamentaaliaukko tai strateginen kriisi.</li>
-                    <li><b>EHDOTON RISK/REWARD (1:2 - 1:3):</b> Jokaisella kaupalla on pakollinen vähintään 1:2 (mieluiten 1:3) Risk/Reward-suhde. Jos teknisessä kuvassa ei ole tilaa 2X–3X nousulle suhteessa Stop-Lossiin, treidiä ei avata.</li>
-                    <li><b>2/3 Voittotavoite & Sulku:</b> Pyritään pitkällä aikavälillä ~67% voittoprosenttiin. Kotiuttaa automaattisesti 50% voitosta tavoitteessa ja nostaa Stop-Lossin sisäänhintaan (Break-Even).</li>
+                    <li><b>Tekninen nousutrendi:</b> Osakkeen nykyhinnan tulee olla pitkän aikavälin nousutrendissä (<b>hinta &gt; 97% SMA200</b>).</li>
+                    <li><b>Dippi / Ylilyönti:</b> Haetaan tilapäistä korjausliikettä (päivälasku <b>≤ -2.0%</b> tai 14p <b>RSI ≤ 40</b>), jonka jälkeen päivän viimeiset tunnit eivät enää laske.</li>
+                    <li><b>Fundamenttianalyysi:</b> Groq-tekoäly saa kasvu-, kannattavuus-, velka- ja arvostusluvut, tulosyllätykset sekä uutiset. Kohde pisteytetään 1-10 ja vähintään <b>{MIN_PISTEET}/10</b> vaaditaan. Treidiä ei avata, jos tulosjulkistus on alle {TULOSRAJA_PAIVIA} päivän päässä.</li>
+                    <li><b>Risk/Reward vähintään 1:{MIN_RR:.0f}:</b> Stop-Loss (1,5 × ATR tai viimeisin pohja) ja Take Profit (lähin vastustaso) lasketaan koodissa, ei tekoälyllä. Jos tilaa nousulle ei ole, treidiä ei avata.</li>
+                    <li><b>Riskinhallinta:</b> Tekoäly valitsee vivun (x{MIN_VIPU}–x{MAX_VIPU}), jonka koodi rajaa niin, että SL on enintään {KO_PUFFER * 100:.0f}% matkasta knock-out-tasolle. Panos mitoitetaan niin, että tappio SL:ssä on enintään {RISKI_PROSENTTI * 100:.0f}% salkusta vivusta riippumatta. Lisäksi enintään {MAX_POSITIOITA} positiota ({MAX_PER_SEKTORI} per sektori) ja vähintään {KASSA_MIN_PROSENTTI * 100:.0f}% kassaa.</li>
+                    <li><b>Toteutus:</b> Signaali syntyy illalla päivän sulkuhinnoista, ja kauppa täytetään seuraavan päivän <b>avaushinnalla</b>. R/R tarkistetaan uudelleen toteutushinnalla.</li>
+                    <li><b>Kotiutus:</b> Tavoitteessa myydään 50% ja Stop-Loss nostetaan sisäänhintaan (Break-Even).</li>
                 </ul>
             </div>
 
@@ -528,7 +759,7 @@ def paivita_salkku_html():
             try:
                 ticker_obj = yf.Ticker(pos["ticker"])
                 nykyhinta = ticker_obj.history(period="1d")["Close"].iloc[-1]
-            except:
+            except Exception:
                 nykyhinta = pos["ostohinta"]
 
             vipu = pos.get("vipu", 1)
@@ -560,6 +791,42 @@ def paivita_salkku_html():
                 </table>
             </div>
 
+            <h2>Odottavat toimeksiannot (täytetään seuraavan päivän avauksessa)</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kohde</th>
+                            <th>Signaalipvm</th>
+                            <th>Signaalihinta</th>
+                            <th>Stop-Loss / Tavoite</th>
+                            <th>Pisteet</th>
+                            <th>Perustelu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    """
+
+    if salkku.get("toimeksiannot"):
+        for o in salkku["toimeksiannot"]:
+            html_content += f"""
+                <tr>
+                    <td data-label="Kohde"><b>{o['ticker']}</b> <span class="badge">Ehdotettu vipu x{o.get('vipu', VIPU_OLETUS)}</span></td>
+                    <td data-label="Signaalipvm" class="nowrap">{o['signaali_pvm']}</td>
+                    <td data-label="Signaalihinta" class="nowrap">{o['signaalihinta']:.2f} €</td>
+                    <td data-label="SL / TP" class="nowrap"><span class="neg">SL: {o['sl']:.2f} €</span><br><span class="pos">TP: {o['tp']:.2f} €</span></td>
+                    <td data-label="Pisteet" class="nowrap">{o['pisteet']}/10</td>
+                    <td data-label="Perustelu"><div class="reason-box"><b>Fundamentit:</b> {o['fundamentit']}<br><b>Riskit:</b> {o['riskit']}</div></td>
+                </tr>
+    """
+    else:
+        html_content += "<tr><td colspan='6' style='text-align: center; color: #777;'>Ei odottavia toimeksiantoja.</td></tr>"
+
+    html_content += """
+                    </tbody>
+                </table>
+            </div>
+
             <h2>Tehdyt treidit (Historia)</h2>
             <div class="table-responsive">
                 <table>
@@ -582,7 +849,7 @@ def paivita_salkku_html():
             tulos_eur = pos.get("toteutunut_tulos_eur", 0.0)
             tulos_pct = pos.get("toteutunut_tulos_pct", 0.0)
             tulos_style = "pos" if tulos_eur >= 0 else "neg"
-            
+
             sulkusyy = pos.get("sulkusyy", "Suljettu")
             aloitus_perustelu = pos.get("aloitus_perustelu", "Ei kirjattua perustelua.")
 
@@ -616,26 +883,40 @@ def paivita_salkku_html():
         f.write(html_content)
     print("Botti 2: Salkun HTML-sivu päivitetty selkeäksi tietokoneella ja mobiilissa!")
 
+
 # --- PÄÄOHJELMA ---
 def main():
-    print("--- Botti 1: Tiukennettu dippi- ja fundamenttivahti käynnissä ---")
-    lahetetyt_viikolla = lue_historia()
+    print("--- Toimeksiantojen täyttö (edellisen illan signaalit) ---")
+    toteuta_toimeksiannot()
 
-    for ticker in TICKERS:
-        try:
-            current_price, sma200, analyysi = botti_1_analysoi(ticker)
-            if current_price and analyysi:
-                current_week = get_finland_time().strftime("%Y-W%V")
-                if f"{ticker}_{current_week}" not in lahetetyt_viikolla:
-                    print(f"[{ticker}] Botti 1 hyväksyi kohteen tiukalla seulalla!")
-                    botti_2_tee_sijoituspaatos(ticker, current_price, sma200, analyysi)
-                    tallenna_historia(ticker)
-        except Exception as e:
-            print(f"Virhe osakkeen {ticker} käsittelyssä: {e}")
+    print("--- Botti 1: Dippi- ja fundamenttivahti käynnissä ---")
+    if not uusi_kaupankayntipaiva():
+        print("Ei uutta kaupankäyntipäivää: ei etsitä uusia positioita.")
+    else:
+        lahetetyt_viikolla = lue_historia()
+        week = get_finland_time().strftime("%Y-W%V")
+        kandidaatit = []
+        for ticker in TICKERS:
+            if f"{ticker}_{week}" in lahetetyt_viikolla:
+                continue
+            try:
+                k = botti_1_analysoi(ticker)
+                if k:
+                    print(f"[{ticker}] Botti 1 hyväksyi kohteen!")
+                    kandidaatit.append(k)
+            except Exception as e:
+                print(f"Virhe osakkeen {ticker} käsittelyssä: {e}")
+
+        # Paras ensin: pisteet, sitten R/R
+        kandidaatit.sort(key=lambda k: (k["analyysi"]["pisteet"], k["tasot"]["rr"]), reverse=True)
+        for k in kandidaatit:
+            luo_odottava_toimeksianto(k)
 
     print("\n--- Botti 2: Päivitetään avoimet treidit & HTML-sivu ---")
     paivita_avoimet_treidit()
     paivita_salkku_html()
 
+
 if __name__ == "__main__":
+    main()
     main()
