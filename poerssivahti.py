@@ -702,7 +702,7 @@ def paivita_salkku_html():
     </head>
     <body>
         <div class="container">
-            <h1>Botti 2: Autonominen Treidaussalkku (Mini Long)</h1>
+            <h1>Treidausbotti: Autonominen Treidaussalkku (Mini Long)</h1>
             <div class="subtitle">Alkupääoma: {salkku['alkupääoma']:.2f} € | Päivitetty: {get_finland_time().strftime("%d.%m.%Y klo %H:%M")}</div>
 
             <div class="strategy-box">
