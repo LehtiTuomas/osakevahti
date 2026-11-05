@@ -13,7 +13,7 @@
             "tavoite": 138.43,
             "pvm": "2026-11-02",
             "baripvm": "2026-10-30",
-            "viimeksi_tarkistettu": "2026-11-03",
+            "viimeksi_tarkistettu": "2026-11-04",
             "sektori": "Financial Services",
             "pisteet": 8,
             "osavoitto_kotiutettu": false,
@@ -23,5 +23,44 @@
             "sulkusyy": ""
         }
     ],
-    "toimeksiannot": []
+    "toimeksiannot": [
+        {
+            "ticker": "XOM",
+            "sektori": "Energy",
+            "pisteet": 8,
+            "signaali_pvm": "2026-11-04",
+            "signaalihinta": 169.27,
+            "sl": 162.04,
+            "tp": 188.5,
+            "rr_signaali": 2.66,
+            "vipu": 5,
+            "vipu_perustelu": "Matala volatiliteetti (beta 0.141, ATR 2.8 %) ja kohtuullinen SL-etäisyys (4.3 %) mahdollistavat keskitasoisen vipun ilman suurta gap‑riskiä.",
+            "rsi": 42.6,
+            "muutos": -4.62,
+            "sma200": 154.11,
+            "fundamentit": "Liikevaihdon kasvu on 32.6 % ja EPS‑kasvu 111 % vuodessa, mikä tukee vahvaa tuloskehitystä. Liikevoittomarginaali 16.98 % ja nettomarginaali 10.46 % osoittavat hyvän kannattavuuden, ja velka/oma pääoma on vain 12.6 % (vapaa kassavirta 28.9 B).",
+            "dipin_syy": "Lasku todennäköisesti johtuu markkinasentistä ja öljyn hintojen viimeaikaisesta heikkenemisestä, ei perimmäisistä fundamentaalisista heikkouksista.",
+            "riskit": "Yön yli tapahtuva hintakuilu (gap) voi ohittaa SL:n; mahdollinen tulosylitys 85 päivän päästä voi aiheuttaa volatiliteettia.",
+            "katalyytti": "Öljyn hinnan nousu tai vahvistuva osinkopolitiikka (44. vuosi peräkkäin) voisi nopeasti nostaa kurssia."
+        },
+        {
+            "ticker": "CVX",
+            "sektori": "Energy",
+            "pisteet": 8,
+            "signaali_pvm": "2026-11-04",
+            "signaalihinta": 216.96,
+            "sl": 209.0,
+            "tp": 236.48,
+            "rr_signaali": 2.45,
+            "vipu": 8,
+            "vipu_perustelu": "Alhainen volatiliteetti (beta 0.453, ATR 2.4 %) ja SL on kohtuullisen lähellä (3.7 %) yhdistettynä vahvoihin fundamentteihin (pisteet 8+) ilman lähitulevaa tulosriskiä.",
+            "rsi": 44.9,
+            "muutos": -3.69,
+            "sma200": 192.18,
+            "fundamentit": "Liikevaihdon kasvu 34.8 % ja EPS‑kasvu 178 % osoittavat vahvaa kasvua; operatiivinen marginaali 18 % ja nettomarginaali 11.9 % tukevat kannattavuutta; arvostus on kohtuullinen (forward PE 13.3, PEG 0.97) mutta velka‑suhde on korkea (18.96 %).",
+            "dipin_syy": "Uutinen Chevronin jalostusvoittojen heikkenemisestä on todennäköisesti aiheuttanut laskun.",
+            "riskit": "Mahdollinen yökuilu‑gap, joka voi ohittaa SL:n, sekä korkea velka‑aste.",
+            "katalyytti": "Poliittinen tai taloudellinen helpotus, joka nostaa energian kysyntää, tai odotettu öljyn hinnan nousu."
+        }
+    ]
 }
