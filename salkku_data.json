@@ -1,5 +1,5 @@
 {
-    "kassa": 2716.1593093385213,
+    "kassa": 2879.8061647290597,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -25,7 +25,7 @@
         {
             "id": 2,
             "ticker": "XOM",
-            "tila": "AVOIN",
+            "tila": "SULJETTU",
             "vipu": 5,
             "ostohinta": 171.06,
             "panos": 223.84,
@@ -33,15 +33,35 @@
             "tavoite": 188.5,
             "pvm": "2026-11-05",
             "baripvm": "2026-11-04",
-            "viimeksi_tarkistettu": "2026-11-09",
+            "viimeksi_tarkistettu": "2026-11-10",
             "sektori": "Energy",
             "pisteet": 8,
             "osavoitto_kotiutettu": false,
             "aloitus_perustelu": "<b>Fundamentit (8/10):</b> Liikevaihdon kasvu on 32.6 % ja EPS‑kasvu 111 % vuodessa, mikä tukee vahvaa tuloskehitystä. Liikevoittomarginaali 16.98 % ja nettomarginaali 10.46 % osoittavat hyvän kannattavuuden, ja velka/oma pääoma on vain 12.6 % (vapaa kassavirta 28.9 B).<br><b>Dipin syy:</b> Lasku todennäköisesti johtuu markkinasentistä ja öljyn hintojen viimeaikaisesta heikkenemisestä, ei perimmäisistä fundamentaalisista heikkouksista.<br><b>Riskit:</b> Yön yli tapahtuva hintakuilu (gap) voi ohittaa SL:n; mahdollinen tulosylitys 85 päivän päästä voi aiheuttaa volatiliteettia.<br><b>Katalyytti:</b> Öljyn hinnan nousu tai vahvistuva osinkopolitiikka (44. vuosi peräkkäin) voisi nopeasti nostaa kurssia.<br><b>Vipu x5:</b> Matala volatiliteetti (beta 0.141, ATR 2.8 %) ja kohtuullinen SL-etäisyys (4.3 %) mahdollistavat keskitasoisen vipun ilman suurta gap‑riskiä. (knock-out ≈ 20 % alempana, SL 5.3 %)<br><b>Tekninen:</b> RSI 42.6, päivä -4.62 %, SMA200 154.11. SL 162.04 (1,5×ATR / swing low), TP 188.5 (vastustaso).<br><b>Toteutus:</b> signaali 2026-11-04 sulku 169.27, täyttö avaushinnalla 171.06 (gap +1.06 %), R/R toteutuksessa 1:1.93. Riski 59 € (2 % salkusta).",
-            "toteutunut_tulos_eur": 0.0,
-            "toteutunut_tulos_pct": 0.0,
-            "sulkusyy": ""
+            "toteutunut_tulos_eur": -60.19314460946177,
+            "toteutunut_tulos_pct": -26.89114752030995,
+            "sulkusyy": "Stop-Loss laukesi (päivän alin 160.11 alitti tason 162.04, toteutus 161.86)"
         }
     ],
-    "toimeksiannot": []
+    "toimeksiannot": [
+        {
+            "ticker": "CVX",
+            "sektori": "Energy",
+            "pisteet": 8,
+            "signaali_pvm": "2026-11-10",
+            "signaalihinta": 211.22,
+            "sl": 202.64,
+            "tp": 236.48,
+            "rr_signaali": 2.94,
+            "vipu": 5,
+            "vipu_perustelu": "Kohtalainen volatiliteetti (ATR 2.7 %), SL 4.1 % etäisyydellä, matala beta 0.453 ja ei lähellä tulosjulkistusta, joten keskitasoinen vipu on sopiva.",
+            "rsi": 39.5,
+            "muutos": 0.21,
+            "sma200": 193.17,
+            "fundamentit": "Liikevaihdon kasvu 34,8 % ja EPS‑kasvu 178 % osoittavat vahvaa kasvua; liikevoittomarginaali 17,9 % ja nettomarginaali 11,9 % tukevat kannattavuutta; velka/oma pääoma 16,8 % on kohtuullinen, free cash flow 26,0 Mrd USD ja current ratio 1,34 osoittavat hyvän likviditeetin.",
+            "dipin_syy": "Alhaisempi öljyn hinta (uusimmat uutiset: öljyn hintojen lasku alimmaksi elokuun jälkeen) on todennäköisesti aiheuttanut myyntipaineen.",
+            "riskit": "Öljyn hinnan volatiliteetti ja mahdollinen tulosjulkistuksen yllätykset.",
+            "katalyytti": "Öljyn hinnan nousu tai positiivinen uutinen Vaca Muerta -polttoaineen pitkän aikavälin kasvusta voisi ajaa kurssin ylös."
+        }
+    ]
 }
