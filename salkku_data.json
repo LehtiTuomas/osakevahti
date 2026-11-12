@@ -1,5 +1,5 @@
 {
-    "kassa": 2879.8061647290597,
+    "kassa": 2627.14616472906,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -41,27 +41,47 @@
             "toteutunut_tulos_eur": -60.19314460946177,
             "toteutunut_tulos_pct": -26.89114752030995,
             "sulkusyy": "Stop-Loss laukesi (päivän alin 160.11 alitti tason 162.04, toteutus 161.86)"
+        },
+        {
+            "id": 3,
+            "ticker": "CVX",
+            "tila": "AVOIN",
+            "vipu": 5,
+            "ostohinta": 212.32,
+            "panos": 252.66,
+            "stop_loss": 202.64,
+            "tavoite": 236.48,
+            "pvm": "2026-11-11",
+            "baripvm": "2026-11-10",
+            "viimeksi_tarkistettu": "2026-11-11",
+            "sektori": "Energy",
+            "pisteet": 8,
+            "osavoitto_kotiutettu": false,
+            "aloitus_perustelu": "<b>Fundamentit (8/10):</b> Liikevaihdon kasvu 34,8 % ja EPS‑kasvu 178 % osoittavat vahvaa kasvua; liikevoittomarginaali 17,9 % ja nettomarginaali 11,9 % tukevat kannattavuutta; velka/oma pääoma 16,8 % on kohtuullinen, free cash flow 26,0 Mrd USD ja current ratio 1,34 osoittavat hyvän likviditeetin.<br><b>Dipin syy:</b> Alhaisempi öljyn hinta (uusimmat uutiset: öljyn hintojen lasku alimmaksi elokuun jälkeen) on todennäköisesti aiheuttanut myyntipaineen.<br><b>Riskit:</b> Öljyn hinnan volatiliteetti ja mahdollinen tulosjulkistuksen yllätykset.<br><b>Katalyytti:</b> Öljyn hinnan nousu tai positiivinen uutinen Vaca Muerta -polttoaineen pitkän aikavälin kasvusta voisi ajaa kurssin ylös.<br><b>Vipu x5:</b> Kohtalainen volatiliteetti (ATR 2.7 %), SL 4.1 % etäisyydellä, matala beta 0.453 ja ei lähellä tulosjulkistusta, joten keskitasoinen vipu on sopiva. (knock-out ≈ 20 % alempana, SL 4.6 %)<br><b>Tekninen:</b> RSI 39.5, päivä 0.21 %, SMA200 193.17. SL 202.64 (1,5×ATR / swing low), TP 236.48 (vastustaso).<br><b>Toteutus:</b> signaali 2026-11-10 sulku 211.22, täyttö avaushinnalla 212.32 (gap +0.52 %), R/R toteutuksessa 1:2.50. Riski 58 € (2 % salkusta).",
+            "toteutunut_tulos_eur": 0.0,
+            "toteutunut_tulos_pct": 0.0,
+            "sulkusyy": ""
         }
     ],
     "toimeksiannot": [
         {
-            "ticker": "CVX",
-            "sektori": "Energy",
+            "ticker": "CRM",
+            "sektori": "Technology",
             "pisteet": 8,
-            "signaali_pvm": "2026-11-10",
-            "signaalihinta": 211.22,
-            "sl": 202.64,
-            "tp": 236.48,
-            "rr_signaali": 2.94,
+            "signaali_pvm": "2026-11-11",
+            "signaalihinta": 218.01,
+            "sl": 205.0,
+            "tp": 257.04,
+            "rr_signaali": 3.0,
             "vipu": 5,
-            "vipu_perustelu": "Kohtalainen volatiliteetti (ATR 2.7 %), SL 4.1 % etäisyydellä, matala beta 0.453 ja ei lähellä tulosjulkistusta, joten keskitasoinen vipu on sopiva.",
+            "vipu_perustelu": "Kohtalainen volatiliteetti (ATR 4 %), SL 6 % päässä ja vahvat fundamentit tekevät 5‑vipua sopivaksi ilman lähellä olevaa riskitapahtumaa.",
             "rsi": 39.5,
-            "muutos": 0.21,
-            "sma200": 193.17,
-            "fundamentit": "Liikevaihdon kasvu 34,8 % ja EPS‑kasvu 178 % osoittavat vahvaa kasvua; liikevoittomarginaali 17,9 % ja nettomarginaali 11,9 % tukevat kannattavuutta; velka/oma pääoma 16,8 % on kohtuullinen, free cash flow 26,0 Mrd USD ja current ratio 1,34 osoittavat hyvän likviditeetin.",
-            "dipin_syy": "Alhaisempi öljyn hinta (uusimmat uutiset: öljyn hintojen lasku alimmaksi elokuun jälkeen) on todennäköisesti aiheuttanut myyntipaineen.",
-            "riskit": "Öljyn hinnan volatiliteetti ja mahdollinen tulosjulkistuksen yllätykset.",
-            "katalyytti": "Öljyn hinnan nousu tai positiivinen uutinen Vaca Muerta -polttoaineen pitkän aikavälin kasvusta voisi ajaa kurssin ylös."
+            "muutos": 2.12,
+            "sma200": 197.41,
+            "fundamentit": "Liikevaihdon kasvu 10,8 % ja EPS‑kasvu 118,9 % osoittavat vahvaa kasvua; kannattavuus on hyvä (oper. marg. 21,5 %, nettomarg. 22 %) ja arvostus kohtuullinen (forward PE 13,6, PEG 0,76). Velka/oma pääoma on korkea (110,4 %) ja current ratio alhainen (0,839), mikä lisää riskiä.",
+            "dipin_syy": "Lasku vaikuttaa todennäköisesti puhtaasti terveeltä dipiltä, johtuen profit‑taking‑paineesta ja alhaisesta RSI:stä (39,5) huolimatta positiivisista EPS‑yllätyksistä.",
+            "riskit": "1) Korkea velkaantuneisuus ja heikko likviditeetti (current ratio <1). 2) Mahdollinen negatiivinen tulosjulkistus seuraavien 20 päivän aikana.",
+            "katalyytti": "AI‑kasvu ja vahva vapaa kassavirta voivat nostaa osaketta, samoin analyytikoiden keskimääräinen suositus (1,68) ja kohdehintatavoite 287,08 $."
         }
     ]
 }
