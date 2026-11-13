@@ -53,7 +53,7 @@
             "tavoite": 236.48,
             "pvm": "2026-11-11",
             "baripvm": "2026-11-10",
-            "viimeksi_tarkistettu": "2026-11-11",
+            "viimeksi_tarkistettu": "2026-11-12",
             "sektori": "Energy",
             "pisteet": 8,
             "osavoitto_kotiutettu": false,
@@ -63,25 +63,5 @@
             "sulkusyy": ""
         }
     ],
-    "toimeksiannot": [
-        {
-            "ticker": "CRM",
-            "sektori": "Technology",
-            "pisteet": 8,
-            "signaali_pvm": "2026-11-11",
-            "signaalihinta": 218.01,
-            "sl": 205.0,
-            "tp": 257.04,
-            "rr_signaali": 3.0,
-            "vipu": 5,
-            "vipu_perustelu": "Kohtalainen volatiliteetti (ATR 4 %), SL 6 % päässä ja vahvat fundamentit tekevät 5‑vipua sopivaksi ilman lähellä olevaa riskitapahtumaa.",
-            "rsi": 39.5,
-            "muutos": 2.12,
-            "sma200": 197.41,
-            "fundamentit": "Liikevaihdon kasvu 10,8 % ja EPS‑kasvu 118,9 % osoittavat vahvaa kasvua; kannattavuus on hyvä (oper. marg. 21,5 %, nettomarg. 22 %) ja arvostus kohtuullinen (forward PE 13,6, PEG 0,76). Velka/oma pääoma on korkea (110,4 %) ja current ratio alhainen (0,839), mikä lisää riskiä.",
-            "dipin_syy": "Lasku vaikuttaa todennäköisesti puhtaasti terveeltä dipiltä, johtuen profit‑taking‑paineesta ja alhaisesta RSI:stä (39,5) huolimatta positiivisista EPS‑yllätyksistä.",
-            "riskit": "1) Korkea velkaantuneisuus ja heikko likviditeetti (current ratio <1). 2) Mahdollinen negatiivinen tulosjulkistus seuraavien 20 päivän aikana.",
-            "katalyytti": "AI‑kasvu ja vahva vapaa kassavirta voivat nostaa osaketta, samoin analyytikoiden keskimääräinen suositus (1,68) ja kohdehintatavoite 287,08 $."
-        }
-    ]
+    "toimeksiannot": []
 }
