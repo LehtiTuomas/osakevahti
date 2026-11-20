@@ -1,5 +1,5 @@
 {
-    "kassa": 2627.14616472906,
+    "kassa": 2845.1772743748775,
     "alkupääoma": 3000.0,
     "positiot": [
         {
@@ -45,7 +45,7 @@
         {
             "id": 3,
             "ticker": "CVX",
-            "tila": "AVOIN",
+            "tila": "SULJETTU",
             "vipu": 5,
             "ostohinta": 212.32,
             "panos": 252.66,
@@ -53,15 +53,35 @@
             "tavoite": 236.48,
             "pvm": "2026-11-11",
             "baripvm": "2026-11-10",
-            "viimeksi_tarkistettu": "2026-11-18",
+            "viimeksi_tarkistettu": "2026-11-19",
             "sektori": "Energy",
             "pisteet": 8,
             "osavoitto_kotiutettu": false,
             "aloitus_perustelu": "<b>Fundamentit (8/10):</b> Liikevaihdon kasvu 34,8 % ja EPS‑kasvu 178 % osoittavat vahvaa kasvua; liikevoittomarginaali 17,9 % ja nettomarginaali 11,9 % tukevat kannattavuutta; velka/oma pääoma 16,8 % on kohtuullinen, free cash flow 26,0 Mrd USD ja current ratio 1,34 osoittavat hyvän likviditeetin.<br><b>Dipin syy:</b> Alhaisempi öljyn hinta (uusimmat uutiset: öljyn hintojen lasku alimmaksi elokuun jälkeen) on todennäköisesti aiheuttanut myyntipaineen.<br><b>Riskit:</b> Öljyn hinnan volatiliteetti ja mahdollinen tulosjulkistuksen yllätykset.<br><b>Katalyytti:</b> Öljyn hinnan nousu tai positiivinen uutinen Vaca Muerta -polttoaineen pitkän aikavälin kasvusta voisi ajaa kurssin ylös.<br><b>Vipu x5:</b> Kohtalainen volatiliteetti (ATR 2.7 %), SL 4.1 % etäisyydellä, matala beta 0.453 ja ei lähellä tulosjulkistusta, joten keskitasoinen vipu on sopiva. (knock-out ≈ 20 % alempana, SL 4.6 %)<br><b>Tekninen:</b> RSI 39.5, päivä 0.21 %, SMA200 193.17. SL 202.64 (1,5×ATR / swing low), TP 236.48 (vastustaso).<br><b>Toteutus:</b> signaali 2026-11-10 sulku 211.22, täyttö avaushinnalla 212.32 (gap +0.52 %), R/R toteutuksessa 1:2.50. Riski 58 € (2 % salkusta).",
-            "toteutunut_tulos_eur": 0.0,
-            "toteutunut_tulos_pct": 0.0,
-            "sulkusyy": ""
+            "toteutunut_tulos_eur": -34.62889035418232,
+            "toteutunut_tulos_pct": -13.705727204220027,
+            "sulkusyy": "Tekoälyn ennenaikainen myynti: Uutinen \"Trump Cheers the “Biggest Drop in Gasoline in 18 Years\" on merkittävä negatiivinen fundamentaalinen signaali Chevronille, ja Trefisin analyysi varoittaa, että Chevronin hedge toimii vain öljyn nousun aikana. Nämä viittaavat vakavaan uutisriskiin, joten positio suljetaan ennenaikaisesti."
         }
     ],
-    "toimeksiannot": []
+    "toimeksiannot": [
+        {
+            "ticker": "JNJ",
+            "sektori": "Healthcare",
+            "pisteet": 7,
+            "signaali_pvm": "2026-11-19",
+            "signaalihinta": 267.14,
+            "sl": 256.62,
+            "tp": 290.25,
+            "rr_signaali": 2.2,
+            "vipu": 5,
+            "vipu_perustelu": "matala volatiliteetti (ATR 2.6 %), SL 3.9 % (~1.5 × ATR) ja tulosjulkaisua 67 pv päässä",
+            "rsi": 44.6,
+            "muutos": -2.04,
+            "sma200": 249.26,
+            "fundamentit": "Liikevaihdon kasvu on 5.9 % ja kannattavuus vahvaa (operatiivinen marginaali 26.6 %, nettomarginaali 16.2 %, ROE 20 %). EPS on kuitenkin laskenut -95.9 %, ja trailing‑PE on korkea (41.35) vaikka forward‑PE on kohtuullinen (23.0). Velka/omaisuus‑suhde on 54.8 % ja current ratio 1.02, mikä on juuri riittävä.",
+            "dipin_syy": "Markkinan sektoriretriitti ja lyhytkestoiset myyntipaineet, kun EPS‑kasvu on negatiivinen ja trailing‑PE on korkea.",
+            "riskit": "1) Negatiivinen tulosjulkistus tai odotusten alittava EPS‑katsaus 67 päivän kuluttua. 2) Yöaukiolon gap‑riski, koska SL on lähellä (3.9 %).",
+            "katalyytti": "Positiivinen prostate cancer -data ESMO‑konferenssissa voi nostaa osakkeen hintaa."
+        }
+    ]
 }
