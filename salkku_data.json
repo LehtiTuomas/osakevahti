@@ -63,25 +63,5 @@
             "sulkusyy": "Tekoälyn ennenaikainen myynti: Uutinen \"Trump Cheers the “Biggest Drop in Gasoline in 18 Years\" on merkittävä negatiivinen fundamentaalinen signaali Chevronille, ja Trefisin analyysi varoittaa, että Chevronin hedge toimii vain öljyn nousun aikana. Nämä viittaavat vakavaan uutisriskiin, joten positio suljetaan ennenaikaisesti."
         }
     ],
-    "toimeksiannot": [
-        {
-            "ticker": "JNJ",
-            "sektori": "Healthcare",
-            "pisteet": 7,
-            "signaali_pvm": "2026-11-19",
-            "signaalihinta": 267.14,
-            "sl": 256.62,
-            "tp": 290.25,
-            "rr_signaali": 2.2,
-            "vipu": 5,
-            "vipu_perustelu": "matala volatiliteetti (ATR 2.6 %), SL 3.9 % (~1.5 × ATR) ja tulosjulkaisua 67 pv päässä",
-            "rsi": 44.6,
-            "muutos": -2.04,
-            "sma200": 249.26,
-            "fundamentit": "Liikevaihdon kasvu on 5.9 % ja kannattavuus vahvaa (operatiivinen marginaali 26.6 %, nettomarginaali 16.2 %, ROE 20 %). EPS on kuitenkin laskenut -95.9 %, ja trailing‑PE on korkea (41.35) vaikka forward‑PE on kohtuullinen (23.0). Velka/omaisuus‑suhde on 54.8 % ja current ratio 1.02, mikä on juuri riittävä.",
-            "dipin_syy": "Markkinan sektoriretriitti ja lyhytkestoiset myyntipaineet, kun EPS‑kasvu on negatiivinen ja trailing‑PE on korkea.",
-            "riskit": "1) Negatiivinen tulosjulkistus tai odotusten alittava EPS‑katsaus 67 päivän kuluttua. 2) Yöaukiolon gap‑riski, koska SL on lähellä (3.9 %).",
-            "katalyytti": "Positiivinen prostate cancer -data ESMO‑konferenssissa voi nostaa osakkeen hintaa."
-        }
-    ]
+    "toimeksiannot": []
 }
