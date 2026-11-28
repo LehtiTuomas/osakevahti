@@ -63,25 +63,5 @@
             "sulkusyy": "Tekoälyn ennenaikainen myynti: Uutinen \"Trump Cheers the “Biggest Drop in Gasoline in 18 Years\" on merkittävä negatiivinen fundamentaalinen signaali Chevronille, ja Trefisin analyysi varoittaa, että Chevronin hedge toimii vain öljyn nousun aikana. Nämä viittaavat vakavaan uutisriskiin, joten positio suljetaan ennenaikaisesti."
         }
     ],
-    "toimeksiannot": [
-        {
-            "ticker": "MSFT",
-            "sektori": "Technology",
-            "pisteet": 8,
-            "signaali_pvm": "2026-11-25",
-            "signaalihinta": 489.93,
-            "sl": 464.38,
-            "tp": 558.07,
-            "rr_signaali": 2.67,
-            "vipu": 4,
-            "vipu_perustelu": "Kohtuullinen volatiliteetti (ATR 3.5 %) ja SL 5.2 % etäisyydellä sekä vahvat fundamentit tukevat maltillista vipua.",
-            "rsi": 39.0,
-            "muutos": -1.25,
-            "sma200": 443.23,
-            "fundamentit": "Liikevaihdon kasvu 18.8 % ja EPS‑kasvu 32.3 % osoittavat vahvaa kasvua. Operatiivinen marginaali 47.1 % ja nettomarginaali 41.2 % sekä ROE 34.2 % kertovat erinomaisesta kannattavuudesta. Velka/omaisuus‑suhde 28.5 % on alhainen ja current ratio 1.225 viittaa hyvään likviditeettiin.",
-            "dipin_syy": "Lasku todennäköisesti johtuu teknisestä myyntipaineesta (RSI 39) ja negatiivisesta uutisesta \"Microsoft declares a code red in the middle of a 'Patchpocalypse'\".",
-            "riskit": "1) Gap‑riski yön yli, koska SL on vain 5.2 % etäisyydellä. 2) Mahdollinen lisänegatiivinen uutisvirta liittyen tietoturvaongelmiin.",
-            "katalyytti": "Positiivinen EPS‑ylitys tai vahva tekoäly‑ ja pilvipalveluiden myynti voisi nostaa kurssia merkittävästi."
-        }
-    ]
+    "toimeksiannot": []
 }
